@@ -1,0 +1,41 @@
+    # Ignore common build output directories
+    build/
+    dist/
+    out/
+    target/
+    bin/
+    ids_rules/
+    logs/
+    quarentine_zone/
+    venv/
+    .gradle/
+    .idea/
+    .vscode/
+
+
+# Ignore common build-related files
+    *.log
+    *.tmp
+    *.swp
+    *.bak
+    *.o
+    *.obj
+    *.exe
+    *.dll
+    *.so
+    *.pyc
+    *.class
+    *.bin
+    *.yar
+
+ # Ignore miscellaneous files
+    .DS_Store
+    Thumbs.db
+    npm-debug.log*
+    yarn-debug.log*
+    yarn-error.log*
+    .env
+    .env.local
+    *.sublime-workspace
+    *.iml
+

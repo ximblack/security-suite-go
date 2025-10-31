@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Suite Control Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .critical { background-color: #7f1d1d; color: #fecaca; }
+        .high { background-color: #7c2d12; color: #fed7aa; }
+        .medium { background-color: #713f12; color: #fef08a; }
+        .info { background-color: #1e3a8a; color: #dbeafe; }
+        .stream-container { position: relative; background: #000; }
+        .stream-container img, .stream-container video { width: 100%; height: auto; }
+        .pulse-green { animation: pulse-green 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse-green {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+        .terminal-output {
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="mb-8 border-b border-gray-700 pb-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <svg class="w-10 h-10 mr-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.332 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                    <div>
+                        <h1 class="text-3xl font-extrabold text-white">Security Suite</h1>
+                        <p class="text-sm text-gray-400">Advanced Threat Detection & Response Platform v2.0</p>
+                    </div>
+                </div>
+                
+                <!-- Info Box -->
+                <div class="mt-4 p-4 bg-blue-900/20 border border-blue-700 rounded-lg">
+                    <div class="flex items-start">
+                        <svg class="w-5 h-5 mr-3 text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div class="text-sm text-blue-300">
+                            <p class="font-semibold mb-1">Interactive Terminal Features:</p>
+                            <ul class="list-disc list-inside space-y-1 text-xs">
+                                <li>Full PTY terminal with sudo support</li>
+                                <li>Real-time input/output streaming via WebSocket</li>
+                                <li>Handles password prompts for sudo commands</li>
+                                <li>Command history with arrow keys (in terminal)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const consoleOutput = document.getElementById('console-output');
+        const scanResultsDiv = document.getElementById('scan-results');
+        let currentStreamURL = null;
+        
+        // Terminal state
+        let terminalSessionID = null;
+        let terminalWebSocket = null;
+        let terminalOutputDiv = document.getElementById('terminal-output');
+
+        function logToConsole(message, level = 'INFO') {
+            const timestamp = new Date().toLocaleTimeString();
+            let color = 'text-green-400';
+            if (level === 'ERROR') color = 'text-red-400';
+            if (level === 'WARN') color = 'text-yellow-400';
+            if (level === 'SUCCESS') color = 'text-cyan-400';
+            
+            const line = document.createElement('div');
+            line.innerHTML = `[<span class="text-gray-500">${timestamp}</span>] [<span class="${color}">${level}</span>] ${message}`;
+            consoleOutput.appendChild(line);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        async function fetchAPI(endpoint, method = 'GET', body = null) {
+            const url = window.location.origin + endpoint;
+            logToConsole(`${method} ${endpoint}...`);
+            
+            try {
+                const options = { 
+                    method, 
+                    headers: { 'Content-Type': 'application/json' } 
+                };
+                if (body) options.body = JSON.stringify(body);
+
+                const response = await fetch(url, options);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                logToConsole(`Request failed: ${error.message}`, 'ERROR');
+                return { status: "error", message: error.message };
+            }
+        }
+
+        async function checkStatus() {
+            const data = await fetchAPI('/api/status');
+            if (data && data.status === 'online') {
+                document.getElementById('status-text').textContent = 'Online';
+                document.getElementById('status-text').className = 'text-green-400';
+                document.getElementById('status-timestamp').textContent = new Date().toLocaleTimeString();
+                logToConsole("Connected to Go Web Server", 'SUCCESS');
+                
+                // Update behavioral analysis stats if available
+                if (data.system && data.system.behavioral_analyzer) {
+                    const ba = data.system.behavioral_analyzer;
+                    document.getElementById('ba-model').textContent = ba.enabled ? 'Active' : 'Inactive';
+                }
+            } else {
+                document.getElementById('status-text').textContent = 'Error';
+                document.getElementById('status-text').className = 'text-red-400';
+            }
+        }
+
+        async function handleScan(event) {
+            event.preventDefault();
+            
+            const targetType = document.getElementById('targetType').value;
+            const target = document.getElementById('target').value;
+            const depth = parseInt(document.getElementById('depth').value);
+
+            scanResultsDiv.innerHTML = '<p class="text-gray-400">Scan in progress...</p>';
+            logToConsole(`Initiating ${targetType} scan on: ${target}`, 'INFO');
+
+            const result = await fetchAPI('/api/scan', 'POST', { 
+                target_type: targetType, 
+                target: target, 
+                depth: depth 
+            });
+            
+            renderScanResults(result);
+        }
+
+        async function handleUpdate() {
+            logToConsole("Updating IDS definitions...", 'INFO');
+            const result = await fetchAPI('/api/update', 'POST');
+            
+            if (result.status === 'complete') {
+                logToConsole(`Update successful: ${result.message}`, 'SUCCESS');
+            } else {
+                logToConsole(`Update failed: ${result.message}`, 'ERROR');
+            }
+        }
+        
+        async function handleStop() {
+            logToConsole("Stopping all processes...", 'WARN');
+            const result = await fetchAPI('/api/stop', 'POST');
+            
+            if (result.status === 'complete') {
+                logToConsole(`Services stopped: ${result.message}`, 'SUCCESS');
+            } else {
+                logToConsole(`Stop failed: ${result.message}`, 'ERROR');
+            }
+        }
+
+        async function handleStreamDetect(event) {
+            event.preventDefault();
+            
+            const url = document.getElementById('stream-url').value;
+            const port = parseInt(document.getElementById('stream-port').value) || 0;
+
+            logToConsole(`Detecting stream at: ${url}`, 'INFO');
+
+            const result = await fetchAPI('/api/stream/detect', 'POST', { url, port });
+            
+            if (result.status === 'active' || result.status === 'detected (partial)') {
+                logToConsole(`Stream detected: ${result.name}`, 'SUCCESS');
+                displayStream(result);
+            } else {
+                logToConsole('No stream detected at specified location', 'WARN');
+                alert('No stream detected. Check the URL/IP and try again.');
+            }
+        }
+
+        function displayStream(streamInfo) {
+            currentStreamURL = streamInfo.url;
+            
+            // Update info panel
+            document.getElementById('stream-info').classList.remove('hidden');
+            document.getElementById('info-name').textContent = streamInfo.name;
+            document.getElementById('info-status').textContent = streamInfo.status;
+            document.getElementById('info-url').textContent = streamInfo.url;
+            document.getElementById('info-reason').textContent = streamInfo.reason;
+            
+            // Show live indicator
+            document.getElementById('stream-status').classList.remove('hidden');
+            
+            // Update viewer
+            const viewer = document.getElementById('stream-viewer');
+            
+            if (streamInfo.url.startsWith('http')) {
+                // HTTP/HTTPS stream - use img tag for MJPEG or iframe
+                viewer.innerHTML = `<img src="${streamInfo.url}" alt="Live Stream" class="w-full h-auto" onerror="handleStreamError()">`;
+            } else if (streamInfo.url.startsWith('rtsp')) {
+                // RTSP stream - show info about needing a media player
+                viewer.innerHTML = `
+                    <div class="text-center text-white p-8">
+                        <svg class="w-16 h-16 mx-auto mb-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <h3 class="text-xl font-semibold mb-2">RTSP Stream Detected</h3>
+                        <p class="text-gray-400 mb-4">RTSP streams require a compatible media player.</p>
+                        <div class="bg-gray-900 p-4 rounded-lg text-left border border-gray-700">
+                            <p class="text-sm text-gray-300 mb-2">Stream URL:</p>
+                            <code class="text-xs text-cyan-400 break-all">${streamInfo.url}</code>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-4">Use VLC or another RTSP-compatible player to view this stream.</p>
+                    </div>
+                `;
+            }
+            
+            // Enable controls
+            document.getElementById('btn-refresh').disabled = false;
+            document.getElementById('btn-stop').disabled = false;
+        }
+
+        function handleStreamError() {
+            logToConsole('Failed to load stream image', 'ERROR');
+            document.getElementById('stream-viewer').innerHTML = `
+                <div class="text-center text-red-400 p-8">
+                    <p>Failed to load stream. The stream may be offline or require authentication.</p>
+                </div>
+            `;
+        }
+
+        function refreshStream() {
+            if (currentStreamURL) {
+                const viewer = document.getElementById('stream-viewer');
+                const img = viewer.querySelector('img');
+                if (img) {
+                    img.src = currentStreamURL + '?t=' + Date.now();
+                }
+                logToConsole('Stream refreshed', 'INFO');
+            }
+        }
+
+        function stopStream() {
+            document.getElementById('stream-viewer').innerHTML = `
+                <div class="text-center text-gray-500">
+                    <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                    <p class="text-lg">Stream stopped</p>
+                </div>
+            `;
+            document.getElementById('stream-info').classList.add('hidden');
+            document.getElementById('stream-status').classList.add('hidden');
+            document.getElementById('btn-refresh').disabled = true;
+            document.getElementById('btn-stop').disabled = true;
+            currentStreamURL = null;
+            logToConsole('Stream stopped', 'INFO');
+        }
+
+        function detectPreset(value) {
+            document.getElementById('stream-url').value = value;
+            document.getElementById('stream-form').dispatchEvent(new Event('submit'));
+        }
+
+        function renderScanResults(data) {
+            scanResultsDiv.innerHTML = '';
+            
+            if (data.status === 'error') {
+                logToConsole(`Scan failed: ${data.message}`, 'ERROR');
+                scanResultsDiv.innerHTML = `<div class="p-4 bg-red-900/30 text-red-300 rounded-lg">
+                    <p class="font-semibold">Error: ${data.message}</p>
+                </div>`;
+                return;
+            }
+            
+            logToConsole(`Scan completed. Threats found: ${data.threats ? data.threats.length : 0}`, 'SUCCESS');
+
+            const summaryHtml = `
+                <div class="grid grid-cols-3 gap-4 mb-4 text-center">
+                    <div class="p-3 bg-blue-900/30 rounded-lg border border-blue-700">
+                        <div class="text-2xl font-bold text-blue-400">${data.total_files_scanned || 0}</div>
+                        <div class="text-xs text-gray-400">Scanned</div>
+                    </div>
+                    <div class="p-3 bg-yellow-900/30 rounded-lg border border-yellow-700">
+                        <div class="text-2xl font-bold text-yellow-400">${data.total_files_scanned_with_findings || 0}</div>
+                        <div class="text-xs text-gray-400">With Findings</div>
+                    </div>
+                    <div class="p-3 ${data.threats && data.threats.length > 0 ? 'bg-red-900/30 border-red-700' : 'bg-green-900/30 border-green-700'} rounded-lg border">
+                        <div class="text-2xl font-bold ${data.threats && data.threats.length > 0 ? 'text-red-400' : 'text-green-400'}">${data.threats ? data.threats.length : 0}</div>
+                        <div class="text-xs text-gray-400">Threats</div>
+                    </div>
+                </div>
+            `;
+            
+            const threatsHtml = (data.threats && data.threats.length > 0) ? `
+                <h3 class="text-lg font-semibold mt-4 mb-3 text-white">Threat Details:</h3>
+                <div class="space-y-2 max-h-80 overflow-y-auto">
+                    ${data.threats.map(threat => {
+                        let severityClass = 'bg-gray-700 border-gray-600';
+                        let severityColor = 'text-gray-300';
+                        
+                        if (threat.severity) {
+                            const sev = threat.severity.toString().toUpperCase();
+                            if (sev === 'CRITICAL') {
+                                severityClass = 'bg-red-900/30 border-red-700';
+                                severityColor = 'text-red-400';
+                            } else if (sev === 'HIGH') {
+                                severityClass = 'bg-orange-900/30 border-orange-700';
+                                severityColor = 'text-orange-400';
+                            } else if (sev === 'MEDIUM') {
+                                severityClass = 'bg-yellow-900/30 border-yellow-700';
+                                severityColor = 'text-yellow-400';
+                            }
+                        }
+                        
+                        return `
+                        <div class="p-4 rounded-lg border ${severityClass}">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="font-mono text-sm text-white break-all flex-1">${threat.target || threat.source_ip || 'Unknown'}</span>
+                                <span class="font-bold text-xs uppercase ml-4 ${severityColor} whitespace-nowrap">${threat.severity || 'INFO'}</span>
+                            </div>
+                            <div class="text-xs text-gray-400">
+                                ${threat.signature ? `<div><strong>Signature:</strong> ${threat.signature}</div>` : ''}
+                                ${threat.context ? `<div class="mt-1">${threat.context}</div>` : ''}
+                            </div>
+                        </div>
+                    `}).join('')}
+                </div>
+            ` : '<div class="p-4 bg-green-900/30 border border-green-700 rounded-lg"><p class="text-green-400 font-semibold">✓ Scan complete. No threats detected.</p></div>';
+
+            scanResultsDiv.innerHTML = summaryHtml + threatsHtml;
+        }
+
+        function switchTab(tab) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-button').forEach(el => {
+                el.classList.remove('border-blue-500', 'text-blue-400');
+                el.classList.add('border-transparent', 'text-gray-400');
+            });
+            
+            // Show selected tab
+            document.getElementById('content-' + tab).classList.remove('hidden');
+            const button = document.getElementById('tab-' + tab);
+            button.classList.remove('border-transparent', 'text-gray-400');
+            button.classList.add('border-blue-500', 'text-blue-400');
+        }
+
+        // ========================================
+        // Terminal Functions
+        // ========================================
+        
+        async function createTerminal() {
+            logToConsole('Creating new terminal session...', 'INFO');
+            
+            try {
+                const response = await fetch(window.location.origin + '/api/terminal/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                terminalSessionID = data.session_id;
+                
+                document.getElementById('terminal-status').innerHTML = `<span class="pulse-green inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span><span class="text-green-400">Active: ${terminalSessionID}</span>`;
+                document.getElementById('btn-terminal-close').disabled = false;
+                document.getElementById('terminal-input').disabled = false;
+                document.getElementById('btn-terminal-send').disabled = false;
+                
+                // Clear output
+                terminalOutputDiv.innerHTML = '<div class="text-green-400">Terminal session started. Type commands below or use the input field.</div>\n';
+                
+                // Connect WebSocket
+                connectTerminalWebSocket();
+                
+                logToConsole(`Terminal session created: ${terminalSessionID}`, 'SUCCESS');
+            } catch (error) {
+                logToConsole(`Failed to create terminal: ${error.message}`, 'ERROR');
+                alert('Failed to create terminal session. Server may not support PTY.');
+            }
+        }
+        
+        function connectTerminalWebSocket() {
+            if (terminalWebSocket) {
+                terminalWebSocket.close();
+            }
+            
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsURL = `${wsProtocol}//${window.location.host}/api/terminal/ws?session_id=${terminalSessionID}`;
+            
+            terminalWebSocket = new WebSocket(wsURL);
+            
+            terminalWebSocket.onopen = () => {
+                logToConsole('Terminal WebSocket connected', 'SUCCESS');
+            };
+            
+            terminalWebSocket.onmessage = (event) => {
+                appendTerminalOutput(event.data);
+            };
+            
+            terminalWebSocket.onerror = (error) => {
+                logToConsole('Terminal WebSocket error', 'ERROR');
+                appendTerminalOutput(`\n[WebSocket Error: Connection failed]\n`);
+            };
+            
+            terminalWebSocket.onclose = () => {
+                logToConsole('Terminal WebSocket closed', 'WARN');
+                appendTerminalOutput(`\n[Terminal session disconnected]\n`);
+                document.getElementById('terminal-status').innerHTML = '<span class="text-red-400">Disconnected</span>';
+            };
+        }
+        
+        function appendTerminalOutput(text) {
+            // Process ANSI escape codes (basic support)
+            text = text.replace(/\x1b\[[0-9;]*m/g, ''); // Strip color codes for now
+            
+            terminalOutputDiv.innerHTML += text;
+            terminalOutputDiv.scrollTop = terminalOutputDiv.scrollHeight;
+        }
+        
+        function sendTerminalInput() {
+            const input = document.getElementById('terminal-input');
+            const command = input.value;
+            
+            if (!command.trim() || !terminalWebSocket || terminalWebSocket.readyState !== WebSocket.OPEN) {
+                return;
+            }
+            
+            // Send as JSON with type
+            const message = JSON.stringify({
+                type: 'input',
+                data: command + '\n'
+            });
+            
+            terminalWebSocket.send(message);
+            input.value = '';
+            
+            // Echo command locally for immediate feedback
+            appendTerminalOutput(`$ ${command}\n`);
+        }
+        
+        function quickCommand(command) {
+            if (!terminalWebSocket || terminalWebSocket.readyState !== WebSocket.OPEN) {
+                alert('Please create a terminal session first.');
+                return;
+            }
+            
+            document.getElementById('terminal-input').value = command;
+            appendTerminalOutput(`$ ${command}\n`);
+            
+            const message = JSON.stringify({
+                type: 'input',
+                data: command + '\n'
+            });
+            
+            terminalWebSocket.send(message);
+        }
+        
+        function clearTerminal() {
+            terminalOutputDiv.innerHTML = '<div class="text-gray-500">Terminal cleared.</div>\n';
+        }
+        
+        async function closeTerminal() {
+            if (!terminalSessionID) return;
+            
+            try {
+                if (terminalWebSocket) {
+                    terminalWebSocket.close();
+                    terminalWebSocket = null;
+                }
+                
+                await fetch(window.location.origin + '/api/terminal/close', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: terminalSessionID })
+                });
+                
+                terminalSessionID = null;
+                document.getElementById('terminal-status').innerHTML = '<span class="text-gray-400">No session</span>';
+                document.getElementById('btn-terminal-close').disabled = true;
+                document.getElementById('terminal-input').disabled = true;
+                document.getElementById('btn-terminal-send').disabled = true;
+                
+                terminalOutputDiv.innerHTML = '<div class="text-gray-500">Terminal session closed.</div>';
+                
+                logToConsole('Terminal session closed', 'INFO');
+            } catch (error) {
+                logToConsole(`Failed to close terminal: ${error.message}`, 'ERROR');
+            }
+        }
+        
+        // Enter key support for terminal input
+        document.getElementById('terminal-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendTerminalInput();
+            }
+        });
+
+        // Initialize
+        window.onload = () => {
+            checkStatus();
+            logToConsole('Security Suite initialized', 'SUCCESS');
+        };
+
+        // Auto-refresh status every 30 seconds
+        setInterval(checkStatus, 30000);
+    </script>
+</body>
+</html></div>
+                <div id="system-status" class="text-right">
+                    <div class="text-lg font-semibold text-gray-300">Status: <span id="status-text">Initializing...</span></div>
+                    <div class="text-xs text-gray-500" id="status-timestamp">--</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="mb-6 border-b border-gray-700">
+            <nav class="flex space-x-8">
+                <button onclick="switchTab('security')" id="tab-security" class="tab-button pb-4 px-1 border-b-2 border-blue-500 font-medium text-blue-400">
+                    Security Scans
+                </button>
+                <button onclick="switchTab('behavioral')" id="tab-behavioral" class="tab-button pb-4 px-1 border-b-2 border-transparent font-medium text-gray-400 hover:text-gray-300">
+                    Behavioral Analysis
+                </button>
+                <button onclick="switchTab('streams')" id="tab-streams" class="tab-button pb-4 px-1 border-b-2 border-transparent font-medium text-gray-400 hover:text-gray-300">
+                    Camera Streams
+                </button>
+                <button onclick="switchTab('terminal')" id="tab-terminal" class="tab-button pb-4 px-1 border-b-2 border-transparent font-medium text-gray-400 hover:text-gray-300">
+                    Terminal
+                </button>
+            </nav>
+        </div>
+
+        <!-- Security Tab -->
+        <div id="content-security" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Left Column: Controls -->
+                <div class="lg:col-span-1 space-y-6">
+                    
+                    <!-- Scan Module -->
+                    <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
+                        <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            Scan Control
+                        </h2>
+                        <form id="scan-form" onsubmit="handleScan(event)">
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Target Type</label>
+                                <select id="targetType" class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                    <option value="file">File (YARA)</option>
+                                    <option value="directory">Directory (Recursive)</option>
+                                    <option value="network">Network/Port Scan</option>
+                                </select>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Target Path / IP</label>
+                                <input type="text" id="target" required placeholder="/etc/passwd or 192.168.1.1" class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            </div>
+                            <div class="mb-6">
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Depth (-1 = unlimited)</label>
+                                <input type="number" id="depth" value="-1" class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            </div>
+                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                                Initiate Scan
+                            </button>
+                        </form>
+                    </section>
+
+                    <!-- System Actions -->
+                    <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
+                        <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            System Actions
+                        </h2>
+                        <div class="space-y-3">
+                            <button onclick="handleUpdate()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
+                                Update Definitions
+                            </button>
+                            <button onclick="handleStop()" class="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
+                                Stop All Processes
+                            </button>
+                        </div>
+                    </section>
+                </div>
+                
+                <!-- Right Column: Results -->
+                <div class="lg:col-span-2 space-y-6">
+
+                    <!-- Console Output -->
+                    <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
+                        <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                            </svg>
+                            Activity Log
+                        </h2>
+                        <div id="console-output" class="h-64 overflow-y-auto bg-gray-900 text-green-400 p-3 text-xs font-mono rounded-lg border border-gray-700">
+                            [INIT] Connecting to Go web server...
+                        </div>
+                    </section>
+
+                    <!-- Scan Results -->
+                    <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
+                        <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Scan Results
+                        </h2>
+                        <div id="scan-results" class="bg-gray-900 p-4 rounded-lg border border-gray-700">
+                            <p class="text-gray-400">No scan has been run yet. Results will appear here.</p>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <!-- Behavioral Analysis Tab -->
+        <div id="content-behavioral" class="tab-content hidden">
+            <div class="grid grid-cols-1 gap-8">
+                <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
+                    <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        Behavioral Analysis Dashboard
+                    </h2>
+                    <div class="bg-gray-900 p-6 rounded-lg border border-gray-700">
+                        <p class="text-gray-300 mb-4">
+                            The Behavioral Analyzer uses machine learning (Isolation Forest simulation) to detect anomalous network behavior patterns.
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div class="bg-gray-800 p-4 rounded-lg border border-gray-600">
+                                <div class="text-sm text-gray-400">Monitored Devices</div>
+                                <div class="text-3xl font-bold text-blue-400" id="ba-devices">0</div>
+                            </div>
+                            <div class="bg-gray-800 p-4 rounded-lg border border-gray-600">
+                                <div class="text-sm text-gray-400">Anomalies Detected</div>
+                                <div class="text-3xl font-bold text-yellow-400" id="ba-anomalies">0</div>
+                            </div>
+                            <div class="bg-gray-800 p-4 rounded-lg border border-gray-600">
+                                <div class="text-sm text-gray-400">Model Status</div>
+                                <div class="text-sm font-semibold text-green-400" id="ba-model">Training...</div>
+                            </div>
+                        </div>
+                        <div class="text-sm text-gray-400 space-y-2">
+                            <div class="flex items-start">
+                                <svg class="w-4 h-4 mr-2 mt-0.5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span>Monitors connection frequency, data transfer patterns, and protocol distribution</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-4 h-4 mr-2 mt-0.5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span>Detects C2 beaconing, lateral movement, and unusual internal scans</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-4 h-4 mr-2 mt-0.5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span>Continuously trains on network traffic patterns for improved accuracy</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- Streams Tab -->
+        <div id="content-streams" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Stream Detection -->
+                <div class="lg:col-span-1">
+                    <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
+                        <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                            </svg>
+                            Stream Detector
+                        </h2>
+                        <form id="stream-form" onsubmit="handleStreamDetect(event)">
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Stream URL or IP</label>
+                                <input type="text" id="stream-url" required placeholder="rtsp://192.168.1.100 or http://..." class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                            </div>
+                            <div class="mb-6">
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Port (optional)</label>
+                                <input type="number" id="stream-port" placeholder="554, 8080, etc." class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                            </div>
+                            <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                                Detect Stream
+                            </button>
+                        </form>
+
+                        <!-- Quick Access Presets -->
+                        <div class="mt-6 pt-6 border-t border-gray-700">
+                            <p class="text-sm font-medium text-gray-300 mb-3">Quick Presets:</p>
+                            <div class="space-y-2">
+                                <button onclick="detectPreset('192.168.1.100')" class="w-full text-left text-sm bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-2 rounded transition">
+                                    Local Network Scan (192.168.1.100)
+                                </button>
+                                <button onclick="detectPreset('rtsp://example.com/stream')" class="w-full text-left text-sm bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-2 rounded transition">
+                                    Test RTSP URL
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Stream Viewer -->
+                <div class="lg:col-span-2">
+                    <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-semibold text-white flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                </svg>
+                                Live Stream Viewer
+                            </h2>
+                            <div id="stream-status" class="hidden">
+                                <span class="pulse-green inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                                <span class="text-sm text-green-400">LIVE</span>
+                            </div>
+                        </div>
+                        
+                        <div id="stream-info" class="mb-4 p-4 bg-gray-900 rounded-lg border border-gray-700 hidden">
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <span class="text-gray-400">Name:</span>
+                                    <span class="text-white ml-2" id="info-name">--</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-400">Status:</span>
+                                    <span class="text-white ml-2" id="info-status">--</span>
+                                </div>
+                                <div class="col-span-2">
+                                    <span class="text-gray-400">URL:</span>
+                                    <span class="text-white ml-2 break-all" id="info-url">--</span>
+                                </div>
+                                <div class="col-span-2">
+                                    <span class="text-gray-400">Reason:</span>
+                                    <span class="text-white ml-2" id="info-reason">--</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="stream-viewer" class="stream-container rounded-lg overflow-hidden border border-gray-700 bg-gray-900 min-h-[400px] flex items-center justify-center">
+                            <div class="text-center text-gray-500">
+                                <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                </svg>
+                                <p class="text-lg">No stream detected</p>
+                                <p class="text-sm mt-2">Use the detector to find and view camera streams</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 flex space-x-3">
+                            <button id="btn-refresh" onclick="refreshStream()" disabled class="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                                Refresh Stream
+                            </button>
+                            <button id="btn-stop" onclick="stopStream()" disabled class="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                                Stop Stream
+                            </button>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <!-- Terminal Tab -->
+        <div id="content-terminal" class="tab-content hidden">
+            <div class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-white flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        Interactive Terminal
+                        <span id="terminal-status" class="ml-3 text-xs"></span>
+                    </h2>
+                    <div class="flex space-x-2">
+                        <button id="btn-terminal-new" onclick="createTerminal()" class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition duration-200">
+                            New Terminal
+                        </button>
+                        <button id="btn-terminal-clear" onclick="clearTerminal()" class="bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition duration-200">
+                            Clear
+                        </button>
+                        <button id="btn-terminal-close" onclick="closeTerminal()" disabled class="bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                            Close Session
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Terminal Display -->
+                <div id="terminal-container" class="bg-black rounded-lg border border-gray-700 font-mono text-sm overflow-hidden">
+                    <div id="terminal-output" class="terminal-output p-4 h-[600px] overflow-y-auto text-green-400">
+                        <div class="text-gray-500">No terminal session active. Click "New Terminal" to start.</div>
+                    </div>
+                </div>
+                
+                <!-- Terminal Input -->
+                <div class="mt-4 flex space-x-2">
+                    <input type="text" id="terminal-input" disabled placeholder="Terminal input (press Enter to send)" class="flex-1 bg-gray-900 text-white border border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none font-mono disabled:opacity-50">
+                    <button onclick="sendTerminalInput()" id="btn-terminal-send" disabled class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Send
+                    </button>
+                </div>
+                
+                <!-- Quick Commands -->
+                <div class="mt-4 pt-4 border-t border-gray-700">
+                    <p class="text-sm font-medium text-gray-300 mb-3">Quick Commands (requires active terminal):</p>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <button onclick="quickCommand('sudo ./security_suite -mode web')" class="text-left text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-2 rounded transition">
+                            Start Web Mode (sudo)
+                        </button>
+                        <button onclick="quickCommand('sudo iptables -L')" class="text-left text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-2 rounded transition">
+                            List iptables Rules
+                        </button>
+                        <button onclick="quickCommand('sudo systemctl status')" class="text-left text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-2 rounded transition">
+                            System Status
+                        </button>
+                        <button onclick="quickCommand('ps aux | grep security')" class="text-left text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-2 rounded transition">
+                            Check Processes
+                        </button>
+                    </div>
+                
