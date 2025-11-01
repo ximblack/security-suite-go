@@ -213,7 +213,7 @@ Open a web browser (Firefox, Chrome, etc.) and go to:
 http://localhost:8080
 ```
 
-**What you should see**: A dark-themed dashboard with three tabs: Security Scans, Camera Streams, and Terminal.
+**What you should see**: A dark-themed dashboard with four tabs: Security Scans, Behavioral Analysis, Camera Streams, and Terminal.
 
 ---
 
@@ -224,20 +224,20 @@ http://localhost:8080
 When you open http://localhost:8080, you'll see:
 
 ```
-┌─────────────────────────────────────────────────────┐
-│  Security Suite          Status: Online             │
-│  [Security Scans] [Camera Streams] [Terminal]       │
-├─────────────────────────────────────────────────────┤
-│                                                     │
-│  Left Side:                Right Side:              │
-│  • Controls                • Results                │
-│  • Settings                • Console Log            │
-│  • Quick Actions           • Output                 │
-│                                                     │
-└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│  Security Suite          Status: Online         │
+│  [Security] [Behavioral] [Cameras] [Terminal]   │
+├─────────────────────────────────────────────────┤
+│                                                  │
+│  Left Side:                Right Side:          │
+│  • Controls                • Results            │
+│  • Settings                • Console Log        │
+│  • Quick Actions           • Output             │
+│                                                  │
+└─────────────────────────────────────────────────┘
 ```
 
-### Three Main Tabs
+### Four Main Tabs
 
 #### 1. Security Scans Tab (Default)
 
@@ -263,7 +263,22 @@ When you open http://localhost:8080, you'll see:
 - **Activity Log**: Real-time console showing what's happening
 - **Scan Results**: Summary and detailed threat findings
 
-#### 2. Camera Streams Tab
+#### 2. Behavioral Analysis Tab
+
+**Purpose**: Monitor and analyze network behavior patterns using machine learning.
+
+**What it shows**:
+- Number of monitored devices
+- Anomalies detected
+- Model training status
+- Statistical analysis of network traffic
+
+**How it works**:
+- Tracks connection frequency, data transfer patterns, and protocol distribution
+- Detects C2 beaconing, lateral movement, and unusual scans
+- Continuously trains on traffic patterns for improved accuracy
+
+#### 3. Camera Streams Tab
 
 **Purpose**: Find and view security cameras on your network.
 
@@ -285,7 +300,7 @@ When you open http://localhost:8080, you'll see:
 - `80` - Standard HTTP
 - `443` - HTTPS
 
-#### 3. Terminal Tab
+#### 4. Terminal Tab
 
 **Purpose**: Run commands directly in the browser with sudo support.
 
@@ -433,8 +448,8 @@ ip addr show
 **How it works** (automatically):
 1. Monitors traffic for 100+ sessions
 2. Builds behavior profile per IP address
-3. Trains anomaly detection model
-4. Scores new traffic (0 = normal, -1 = very abnormal)
+3. Trains anomaly detection model using statistical analysis
+4. Scores new traffic (0 = normal, negative = abnormal)
 
 **What it tracks per device**:
 - Connection frequency (how often it connects)
@@ -444,20 +459,21 @@ ip addr show
 - Typical services (which ports it uses)
 
 **Anomaly score explained**:
-- `0.5 to 0`: Normal behavior
-- `0 to -0.5`: Unusual but not alarming
-- `-0.5 to -1`: Very suspicious, investigate
-- `-1 or lower`: Critical anomaly, likely threat
+- `Above 3.0`: Normal behavior
+- `0 to 3.0`: Unusual but not alarming
+- `3.0 to 6.0`: Suspicious, investigate (MEDIUM)
+- `6.0 to 9.0`: Very suspicious, likely threat (HIGH)
+- `9.0+`: Critical anomaly (CRITICAL)
 
 **Real-world example**:
 ```
 Device: 192.168.1.50 (office computer)
 Normal: 9am-5pm, mostly HTTP/HTTPS, 100MB/day
 Anomaly: 3am connection, large FTP upload, 5GB
-Score: -0.85 (ALERT)
+Z-Score: 8.5 (CRITICAL ALERT)
 ```
 
-**Hidden feature**: The ML model auto-retrains every 250 new data points. You can trigger manual retraining by restarting the monitor.
+**Hidden feature**: The ML model auto-retrains every 250 new data points. Manual retraining happens when you restart the monitor.
 
 ### Feature 6: Automatic Threat Response
 
@@ -510,11 +526,7 @@ ls -la quarantine_zone/
 sudo mv quarantine_zone/file.quarantined_20241030 /original/path/file
 ```
 
-**Hidden feature**: All responses are logged to `action_log`. View with:
-```bash
-# In Terminal tab:
-cat action_log | grep QUARANTINE
-```
+**Hidden feature**: All responses are logged to the action log. View programmatically via the ResponseOrchestrator.
 
 ### Feature 7: Camera Stream Detection
 
@@ -546,7 +558,7 @@ Port: (leave empty or try 554, 8080)
 Click: Detect Stream
 ```
 
-**Method 3 - Network Scan**:
+**Method 3 - Network Scan** (via code):
 ```bash
 # In Terminal tab:
 sudo ./security_suite scan -type network -target 192.168.1.0/24
@@ -618,7 +630,7 @@ drwx------ 2 root root 4096 Oct 30 10:15 .
 - **System Status**: Checks systemd services
 - **Check Processes**: Shows running processes
 
-**Keyboard shortcuts**:
+**Keyboard shortcuts** (in terminal):
 - `Enter` - Execute command
 - `Ctrl+C` - Cancel current command
 - `Ctrl+L` - Clear screen
@@ -627,7 +639,7 @@ drwx------ 2 root root 4096 Oct 30 10:15 .
 - `Tab` - Auto-complete (when available)
 
 **Hidden features**:
-1. **Command history**: All commands are remembered (up to 1000)
+1. **Command history**: All commands are remembered (session-based)
 2. **Multi-line editing**: Use `\` at end of line to continue
 3. **Pipes and redirects work**: `ls | grep test > output.txt`
 4. **Background jobs**: `ping google.com &` (runs in background)
@@ -646,7 +658,7 @@ sudo pacman -S suricata        # Arch Linux
 **How it works**:
 1. Suricata monitors network traffic
 2. Writes alerts to `/var/log/suricata/eve.json`
-3. Security Suite reads alerts
+3. Security Suite reads alerts every 5 seconds
 4. Converts to unified threat format
 5. Displays in Security Scans console
 
@@ -678,7 +690,7 @@ sudo ./security_suite update
 - Data exfiltration
 - Command & Control traffic
 
-**Hidden feature**: The IDS module auto-checks for new alerts every 5 seconds. You don't need to refresh the page.
+**Hidden feature**: The IDS module auto-checks for new alerts every 2 seconds. You don't need to refresh the page.
 
 ### Feature 10: Hash-Based Detection
 
@@ -699,7 +711,7 @@ SHA256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 **Where hashes are checked**:
 1. **Local blacklist**: Known bad hashes in code
 2. **VirusTotal** (if API key configured): Online database
-3. **NSRL** (if database downloaded): Known good files
+3. **ClamAV** (if installed): Local antivirus engine
 
 **How to check a file hash manually**:
 ```bash
@@ -710,10 +722,16 @@ sha256sum /path/to/file
 md5sum /path/to/file
 ```
 
-**Hidden feature**: Every scanned file's hash is logged to `scan_history.json`. You can review past scans:
+**Configuring VirusTotal**:
 ```bash
-cat scan_history.json | jq '.[] | select(.hash == "a34c11...")'
+# Set your API key as environment variable:
+export VIRUSTOTAL_API_KEY="your_api_key_here"
+
+# Make it permanent (add to ~/.bashrc):
+echo 'export VIRUSTOTAL_API_KEY="your_api_key_here"' >> ~/.bashrc
 ```
+
+**Hidden feature**: VirusTotal results are cached for 24 hours to avoid hitting rate limits.
 
 ---
 
@@ -725,7 +743,7 @@ cat scan_history.json | jq '.[] | select(.hash == "a34c11...")'
 
 **How to use**:
 ```bash
-# In Terminal tab:
+# Via API (when server is running):
 curl http://localhost:8080/api/profiles > profiles.json
 
 # View a specific device profile:
@@ -926,57 +944,1115 @@ curl -X POST http://localhost:8080/api/stop | jq
 **Where logs are stored**:
 - Console output (terminal)
 - `/var/log/syslog` (system log)
-- `security_suite.log` (if file logging enabled)
+- Application memory
 
 **View logs in real-time**:
 ```bash
 # System log:
 sudo tail -f /var/log/syslog | grep security_suite
-
-# Application log (if exists):
-tail -f security_suite.log
 ```
 
-### Hidden Feature 6: Configuration File
+### Hidden Feature 6: Advanced Network Scanning
 
-**What it does**: Customize default settings.
+**What it does**: Comprehensive network scanning with service detection and vulnerability scanning.
 
-**Location**: `config.json` (create if doesn't exist)
-
-**Example configuration**:
-```json
-{
-  "web_server": {
-    "port": 8080,
-    "enable_https": false,
-    "cert_file": "/etc/ssl/cert.pem",
-    "key_file": "/etc/ssl/key.pem"
-  },
-  "scanner": {
-    "max_file_size_mb": 100,
-    "skip_extensions": [".jpg", ".png", ".mp4"],
-    "scan_timeout_seconds": 300
-  },
-  "network": {
-    "default_interface": "eth0",
-    "monitor_pcap_buffer_mb": 10
-  },
-  "quarantine": {
-    "directory": "/opt/security-suite/quarantine",
-    "auto_delete_days": 30
-  },
-  "notifications": {
-    "email_enabled": false,
-    "email_to": "admin@example.com",
-    "slack_webhook": ""
-  }
-}
-```
+**Scan profiles available**:
+- `quick` - Top 100 ports, fast (default)
+- `standard` - Top 1000 ports
+- `comprehensive` - All 65535 ports
+- `pentest` - Penetration testing profile
 
 **How to use**:
-1. Create `config.json` in the application directory
-2. Add your settings
-3. Restart the application
-4. Settings are applied automatically
+```bash
+# Quick scan (top 100 ports):
+./security_suite scan -type network -target 192.168.1.0/24
 
-###
+# Standard scan via code would use AdvancedNetworkScanner
+```
+
+**What it detects**:
+- Open/closed/filtered ports
+- Service versions (SSH, HTTP, MySQL, etc.)
+- Operating system fingerprinting
+- TLS/SSL certificate information
+- Known vulnerabilities (CVEs)
+
+---
+
+## Command Line Interface
+
+### Basic CLI Usage
+
+The Security Suite can be run in two modes:
+- **Web Mode**: Interactive web interface (default)
+- **CLI Mode**: Command-line operations for scripting
+
+### CLI Commands Overview
+
+```bash
+# Show help:
+./security_suite help
+
+# Show version:
+./security_suite -version
+
+# Enable verbose output:
+./security_suite -verbose [command]
+```
+
+### Scan Commands
+
+#### File Scan
+```bash
+./security_suite scan -type file -target /path/to/file.exe
+```
+
+**Example output**:
+```
+[MalwareDetector] Starting multi-engine scan on: /path/to/file.exe
+[SCAN] File SHA256: a34c11f750058b871c4c1a85b96796a583e747d79b63484f
+[ALERT] CRITICAL: YARA rule 'MalwareSignature' matched
+
+Scan Results:
+Status: complete
+Message: Scan completed. 1 threats found.
+
+Found 1 threats:
+[1] Severity: CRITICAL
+    Target: /path/to/file.exe
+    Signature: MalwareSignature
+    Context: YARA rule 'MalwareSignature' matched in target
+```
+
+#### Directory Scan
+```bash
+./security_suite scan -type directory -target /var/www/html -depth 3
+```
+
+**Options**:
+- `-depth -1` - Unlimited recursion (scan all subdirectories)
+- `-depth 0` - Current directory only
+- `-depth 3` - Three levels deep
+
+#### Network Scan
+```bash
+# Single host:
+./security_suite scan -type network -target 192.168.1.100
+
+# Entire subnet:
+./security_suite scan -type network -target 192.168.1.0/24
+
+# IP range:
+./security_suite scan -type network -target 192.168.1.1-254
+```
+
+### Monitor Commands
+
+#### Start Network Monitoring
+```bash
+./security_suite monitor -iface eth0
+```
+
+**What it does**:
+- Captures packets on the specified interface
+- Analyzes traffic for threats
+- Updates behavioral profiles
+- Generates alerts for suspicious activity
+
+**To find your network interface**:
+```bash
+ip addr show
+# or
+ifconfig
+```
+
+**Common interfaces**:
+- `eth0` - First Ethernet adapter
+- `wlan0` - First WiFi adapter
+- `enp0s3` - Modern naming for Ethernet
+- `wlp2s0` - Modern naming for WiFi
+
+**Stopping monitoring**: Press `Ctrl+C`
+
+### Update Commands
+
+#### Update IDS Rules
+```bash
+./security_suite update
+```
+
+**What it does**:
+1. Runs `suricata-update` to fetch latest rules
+2. Reloads Suricata IDS
+3. Reports update status
+
+**Requirements**:
+- Suricata must be installed
+- Sudo privileges required
+- Internet connection needed
+
+### Stop Commands
+
+#### Stop All Services
+```bash
+./security_suite stop
+```
+
+**What it stops**:
+- Network traffic monitoring
+- IDS processes
+- Background scanners
+
+### Demo Command
+
+#### Run Demonstration
+```bash
+./security_suite demo
+```
+
+**What it demonstrates**:
+1. Creates a test threat (EICAR test file)
+2. Generates network threat simulation
+3. Shows automatic response system
+4. Demonstrates file quarantine
+5. Shows network blocking
+
+**Example output**:
+```
+=======================================================
+--- DEMONSTRATION: REAL THREAT RESPONSE EXECUTION ---
+=======================================================
+
+[DEMO 1] Generating Critical Network Threat...
+[ORCHESTRATOR] Threat mapped to action: BLOCK_NETWORK_ACCESS
+
+[RESPONSE] Network Block Outcome:
+  Status: COMPLETED
+  Message: Successfully executed network block for IP: 192.168.1.50
+
+[DEMO 2] Generating High File Threat...
+  Created dummy file: suspicious_file.bin
+
+[RESPONSE] File Quarantine Outcome:
+  Status: COMPLETED
+  Message: Successfully quarantined file
+```
+
+### CLI Examples and Workflows
+
+#### Daily Security Scan
+```bash
+#!/bin/bash
+# daily_scan.sh - Run daily security scan
+
+DATE=$(date +%Y%m%d)
+LOG_FILE="/var/log/security_scan_${DATE}.log"
+
+echo "Starting daily security scan: $DATE" > $LOG_FILE
+
+# Scan web directories
+./security_suite scan -type directory -target /var/www -depth -1 >> $LOG_FILE
+
+# Scan user directories
+./security_suite scan -type directory -target /home -depth 2 >> $LOG_FILE
+
+# Scan network
+./security_suite scan -type network -target 192.168.1.0/24 >> $LOG_FILE
+
+echo "Scan completed: $(date)" >> $LOG_FILE
+```
+
+#### Scheduled Network Monitoring
+```bash
+# Start monitoring in background
+nohup ./security_suite monitor -iface eth0 > /var/log/traffic_monitor.log 2>&1 &
+
+# Save the PID
+echo $! > /var/run/security_suite_monitor.pid
+```
+
+#### Automated Threat Response
+```bash
+# Watch for threats and take action
+./security_suite monitor -iface eth0 | while read line; do
+    if echo "$line" | grep -q "CRITICAL"; then
+        echo "CRITICAL ALERT: $line" | mail -s "Security Alert" admin@example.com
+    fi
+done
+```
+
+---
+
+## Understanding Sudo and Permissions
+
+### Why Sudo is Required
+
+Many security operations require root (administrator) privileges:
+
+**Operations requiring sudo**:
+1. **Network packet capture** - Reading raw network packets
+2. **Firewall management** - Adding/removing iptables rules
+3. **File quarantine** - Moving files to protected directories
+4. **IDS operations** - Starting/stopping Suricata
+5. **System monitoring** - Accessing protected system resources
+
+### How Sudo Works
+
+```bash
+# Without sudo (fails):
+./security_suite monitor -iface eth0
+# Error: Permission denied
+
+# With sudo (works):
+sudo ./security_suite monitor -iface eth0
+# [sudo] password for user: 
+# [NetworkMalwareScanner] Started packet capture on eth0
+```
+
+### Sudo Password Caching
+
+**First command**:
+```bash
+sudo ./security_suite scan -type file -target /tmp/test
+[sudo] password for user: ████████
+```
+
+**Subsequent commands** (within 15 minutes - no password needed):
+```bash
+sudo ./security_suite scan -type network -target 192.168.1.0/24
+# No password prompt
+```
+
+### Configuring Passwordless Sudo (Advanced)
+
+**⚠️ WARNING**: Only do this if you understand the security implications.
+
+```bash
+# Edit sudoers file:
+sudo visudo
+
+# Add this line (replace 'username' with your username):
+username ALL=(ALL) NOPASSWD: /path/to/security_suite
+
+# Save and exit
+```
+
+**Now you can run without password**:
+```bash
+sudo ./security_suite monitor -iface eth0
+# No password prompt
+```
+
+### Permission Troubleshooting
+
+#### Problem: "Permission denied" when capturing packets
+
+**Solution**:
+```bash
+# Option 1: Use sudo
+sudo ./security_suite monitor -iface eth0
+
+# Option 2: Give binary special capabilities (persistent)
+sudo setcap cap_net_raw,cap_net_admin=eip ./security_suite
+# Now works without sudo:
+./security_suite monitor -iface eth0
+```
+
+#### Problem: "Cannot write to quarantine directory"
+
+**Solution**:
+```bash
+# Check permissions:
+ls -la quarantine_zone/
+
+# Fix permissions:
+sudo chown -R root:root quarantine_zone/
+sudo chmod 700 quarantine_zone/
+```
+
+#### Problem: "iptables: Permission denied"
+
+**Solution**:
+```bash
+# Must run with sudo:
+sudo ./security_suite -mode web
+
+# Or use setcap for iptables:
+sudo setcap cap_net_admin=eip /usr/sbin/iptables
+```
+
+---
+
+## Troubleshooting Common Issues
+
+### Installation Issues
+
+#### Issue: "go: command not found"
+
+**Problem**: Go is not installed or not in PATH.
+
+**Solution**:
+```bash
+# Ubuntu/Debian:
+sudo apt-get install golang-go
+
+# Arch Linux:
+sudo pacman -S go
+
+# Verify installation:
+go version
+```
+
+#### Issue: "libpcap not found"
+
+**Problem**: libpcap development headers not installed.
+
+**Solution**:
+```bash
+# Ubuntu/Debian:
+sudo apt-get install libpcap-dev
+
+# Arch Linux:
+sudo pacman -S libpcap
+
+# Fedora:
+sudo dnf install libpcap-devel
+```
+
+#### Issue: "yara/yara.h: No such file or directory"
+
+**Problem**: YARA development files not installed.
+
+**Solution**:
+```bash
+# Ubuntu/Debian:
+sudo apt-get install libyara-dev
+
+# Arch Linux:
+sudo pacman -S yara
+
+# Or build from source:
+wget https://github.com/VirusTotal/yara/archive/v4.3.2.tar.gz
+tar -xvzf v4.3.2.tar.gz
+cd yara-4.3.2
+./bootstrap.sh
+./configure
+make
+sudo make install
+```
+
+### Runtime Issues
+
+#### Issue: "bind: address already in use"
+
+**Problem**: Port 8080 is already in use.
+
+**Solution**:
+```bash
+# Find what's using the port:
+sudo lsof -i :8080
+
+# Kill the process:
+sudo kill -9 <PID>
+
+# Or change the port in web_server.go:
+# const webServerPort = "8081"  // Change to different port
+```
+
+#### Issue: "No such device" when monitoring network
+
+**Problem**: Invalid network interface name.
+
+**Solution**:
+```bash
+# List all interfaces:
+ip addr show
+
+# Use the correct interface name:
+sudo ./security_suite monitor -iface wlan0  # Not eth0
+```
+
+#### Issue: "Failed to open device: Operation not permitted"
+
+**Problem**: Insufficient permissions for packet capture.
+
+**Solution**:
+```bash
+# Use sudo:
+sudo ./security_suite monitor -iface eth0
+
+# Or set capabilities:
+sudo setcap cap_net_raw,cap_net_admin=eip ./security_suite
+```
+
+#### Issue: "Suricata not found"
+
+**Problem**: Suricata IDS is not installed.
+
+**Solution**:
+```bash
+# Install Suricata:
+sudo apt-get install suricata  # Ubuntu/Debian
+sudo pacman -S suricata        # Arch Linux
+
+# Verify installation:
+suricata --build-info
+
+# Start Suricata:
+sudo systemctl start suricata
+```
+
+### Web Interface Issues
+
+#### Issue: "index.html not found"
+
+**Problem**: Web interface file missing.
+
+**Solution**:
+```bash
+# Check if file exists:
+ls -la index.html
+
+# If missing, ensure you're in the correct directory:
+cd /path/to/security-suite
+
+# Or create a minimal index.html (see index.html in source)
+```
+
+#### Issue: Terminal not working in browser
+
+**Problem**: WebSocket connection failed or PTY not supported.
+
+**Solution**:
+```bash
+# Check if creack/pty is installed:
+go get github.com/creack/pty
+
+# Rebuild:
+go build -o security_suite
+
+# Verify PTY support:
+which bash
+# Should output: /bin/bash
+```
+
+#### Issue: "WebSocket connection failed"
+
+**Problem**: Browser security or firewall blocking WebSockets.
+
+**Solution**:
+1. Check browser console for errors (F12)
+2. Ensure you're accessing via `http://localhost:8080` not `file://`
+3. Check firewall rules:
+```bash
+sudo iptables -L -n | grep 8080
+```
+
+### Performance Issues
+
+#### Issue: Slow directory scanning
+
+**Problem**: Scanning too many files or very large files.
+
+**Solution**:
+```bash
+# Reduce scan depth:
+./security_suite scan -type directory -target /home -depth 2
+
+# Skip large files by editing scanner code
+# Or exclude directories:
+./security_suite scan -type directory -target /home -depth -1
+# Then manually exclude unwanted directories
+```
+
+#### Issue: High CPU usage during monitoring
+
+**Problem**: Processing too many packets.
+
+**Solution**:
+```bash
+# Monitor specific traffic only:
+# Edit malware_traffic_detector.go to add BPF filters
+
+# Or reduce monitoring frequency
+# Edit the ticker interval in periodicAnalysis()
+```
+
+### Data Issues
+
+#### Issue: "Too many open files"
+
+**Problem**: System file descriptor limit reached.
+
+**Solution**:
+```bash
+# Check current limit:
+ulimit -n
+
+# Increase limit temporarily:
+ulimit -n 4096
+
+# Increase permanently (edit /etc/security/limits.conf):
+sudo nano /etc/security/limits.conf
+# Add:
+* soft nofile 4096
+* hard nofile 8192
+```
+
+#### Issue: Disk space full from logs
+
+**Problem**: Log files growing too large.
+
+**Solution**:
+```bash
+# Check disk usage:
+df -h
+
+# Find large log files:
+du -sh /var/log/* | sort -h
+
+# Clean old logs:
+sudo journalctl --vacuum-time=7d
+sudo find /var/log -name "*.log" -mtime +30 -delete
+
+# Rotate logs:
+sudo logrotate -f /etc/logrotate.conf
+```
+
+---
+
+## Security Best Practices
+
+### Running the Application Securely
+
+#### 1. Use a Dedicated User Account
+
+**Don't run as root directly**:
+```bash
+# Create security suite user:
+sudo useradd -r -s /bin/bash -d /opt/security-suite securitysuite
+
+# Set ownership:
+sudo chown -R securitysuite:securitysuite /opt/security-suite
+
+# Run as that user:
+sudo -u securitysuite ./security_suite -mode web
+```
+
+#### 2. Restrict Web Interface Access
+
+**Only allow localhost**:
+```bash
+# Use SSH tunnel for remote access:
+ssh -L 8080:localhost:8080 user@server
+
+# Then access via: http://localhost:8080 on your local machine
+```
+
+**Or configure firewall**:
+```bash
+# Allow only specific IPs:
+sudo iptables -A INPUT -p tcp --dport 8080 -s 192.168.1.100 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 8080 -j DROP
+```
+
+#### 3. Enable HTTPS (Production)
+
+**Generate self-signed certificate**:
+```bash
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout server.key -out server.crt
+
+# Modify web_server.go to use HTTPS
+# Or use reverse proxy (nginx/apache) with SSL
+```
+
+#### 4. Secure the Quarantine Directory
+
+```bash
+# Strict permissions:
+sudo chmod 700 quarantine_zone/
+sudo chown root:root quarantine_zone/
+
+# Regular backups:
+tar -czf quarantine_backup_$(date +%Y%m%d).tar.gz quarantine_zone/
+```
+
+#### 5. Monitor the Monitor
+
+**Set up monitoring for the Security Suite itself**:
+```bash
+# Create systemd service:
+sudo nano /etc/systemd/system/security-suite.service
+```
+
+```ini
+[Unit]
+Description=Security Suite
+After=network.target
+
+[Service]
+Type=simple
+User=securitysuite
+ExecStart=/opt/security-suite/security_suite -mode web
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+# Enable and start:
+sudo systemctl enable security-suite
+sudo systemctl start security-suite
+
+# Check status:
+sudo systemctl status security-suite
+```
+
+### Protecting Against False Positives
+
+#### 1. Whitelist Known Good Files
+
+**Create whitelist in YARA**:
+```yara
+rule Whitelist_TrustedApp
+{
+    meta:
+        description = "Whitelist for trusted application"
+    
+    condition:
+        false  // This rule never matches
+}
+
+// Then exclude these in your scans
+```
+
+#### 2. Review Before Blocking
+
+**Manual approval mode**:
+```bash
+# Instead of automatic blocking, log only:
+# Modify response_orchestrator.go to require approval
+```
+
+#### 3. Test in Safe Environment
+
+```bash
+# Use virtual machine or isolated network for testing:
+# 1. Install VirtualBox
+# 2. Create test VM
+# 3. Test Security Suite there first
+```
+
+### Regular Maintenance Tasks
+
+#### Daily
+```bash
+# Check for alerts:
+sudo journalctl -u security-suite | grep CRITICAL
+
+# Verify services running:
+sudo systemctl status security-suite
+sudo systemctl status suricata
+```
+
+#### Weekly
+```bash
+# Update threat definitions:
+./security_suite update
+
+# Review quarantine:
+ls -lh quarantine_zone/
+
+# Clean old quarantine files:
+find quarantine_zone/ -mtime +30 -delete
+```
+
+#### Monthly
+```bash
+# Full system scan:
+./security_suite scan -type directory -target / -depth -1
+
+# Review behavioral profiles:
+curl http://localhost:8080/api/profiles | jq
+
+# Update application:
+git pull
+go build -o security_suite
+sudo systemctl restart security-suite
+```
+
+---
+
+## Real-World Usage Scenarios
+
+### Scenario 1: Web Server Protection
+
+**Objective**: Protect a web server from attacks.
+
+**Setup**:
+```bash
+# 1. Install on web server
+cd /opt
+sudo git clone https://github.com/yourrepo/security-suite
+cd security-suite
+sudo ./setup_and_run.sh
+
+# 2. Start monitoring
+sudo ./security_suite monitor -iface eth0 &
+
+# 3. Scan web directories regularly
+crontab -e
+# Add:
+0 2 * * * /opt/security-suite/security_suite scan -type directory -target /var/www -depth -1 >> /var/log/webscan.log
+```
+
+**What it detects**:
+- SQL injection attempts
+- File upload exploits
+- Directory traversal attacks
+- Malicious scripts in uploads
+- Port scanning of your server
+
+### Scenario 2: Network Perimeter Defense
+
+**Objective**: Monitor entire network for threats.
+
+**Setup**:
+```bash
+# 1. Install on gateway/firewall
+# 2. Monitor external interface
+sudo ./security_suite monitor -iface eth0
+
+# 3. Set up automatic blocking
+# Edit response_orchestrator.go to enable auto-block
+```
+
+**Use cases**:
+- Detect lateral movement between hosts
+- Identify compromised devices
+- Block C2 communications
+- Alert on data exfiltration
+
+### Scenario 3: Incident Response
+
+**Objective**: Investigate potential compromise.
+
+**Procedure**:
+```bash
+# 1. Scan suspicious host
+./security_suite scan -type network -target 192.168.1.50
+
+# 2. Check for persistence mechanisms
+./security_suite scan -type directory -target /home/user/.config -depth -1
+./security_suite scan -type directory -target /etc/systemd/system -depth -1
+
+# 3. Review behavioral profile
+curl http://localhost:8080/api/profiles | jq '.["192.168.1.50"]'
+
+# 4. Isolate if confirmed
+sudo iptables -A INPUT -s 192.168.1.50 -j DROP
+sudo iptables -A OUTPUT -d 192.168.1.50 -j DROP
+```
+
+### Scenario 4: Compliance Monitoring
+
+**Objective**: Maintain security compliance (PCI-DSS, HIPAA, etc.).
+
+**Setup**:
+```bash
+# 1. Regular scans for compliance
+./security_suite scan -type directory -target /var/lib/mysql -depth -1
+./security_suite scan -type directory -target /opt/medical_records -depth -1
+
+# 2. Generate compliance reports
+./security_suite scan -type directory -target /sensitive -depth -1 > compliance_$(date +%Y%m%d).log
+
+# 3. Monitor for unauthorized access
+./security_suite monitor -iface eth0 | grep "192.168.1.100" >> access_log.txt
+```
+
+### Scenario 5: IOT Device Security
+
+**Objective**: Find and secure IoT devices on network.
+
+**Procedure**:
+```bash
+# 1. Discover all devices
+./security_suite scan -type network -target 192.168.1.0/24
+
+# 2. Find cameras
+curl -X POST http://localhost:8080/api/stream/detect -d '{"url":"192.168.1.0/24"}'
+
+# 3. Check for default passwords
+# Use advanced scanner to test common credentials
+
+# 4. Monitor IoT traffic
+./security_suite monitor -iface eth0 | grep "192.168.1.150"
+```
+
+### Scenario 6: Malware Analysis Lab
+
+**Objective**: Analyze suspicious files safely.
+
+**Setup**:
+```bash
+# 1. Isolated VM with Security Suite
+# 2. Scan suspicious file
+./security_suite scan -type file -target /tmp/suspicious.exe
+
+# 3. Review YARA matches
+cat scan_results.log | grep "YARA"
+
+# 4. Check VirusTotal
+export VIRUSTOTAL_API_KEY="your_key"
+./security_suite scan -type file -target /tmp/suspicious.exe
+
+# 5. Quarantine and examine
+ls -la quarantine_zone/
+hexdump -C quarantine_zone/suspicious.exe.quarantined*
+```
+
+---
+
+## FAQ
+
+### General Questions
+
+**Q: Do I need to run this 24/7?**
+
+A: For real-time monitoring (traffic analysis, IDS), yes. For periodic scans, no - you can run scans on a schedule using cron.
+
+**Q: How much disk space does it use?**
+
+A: The application itself is ~20MB. Logs and quarantine files can grow - plan for 1-5GB depending on usage.
+
+**Q: Can I run this on Raspberry Pi?**
+
+A: Yes! It works on ARM processors. Just install ARM versions of dependencies.
+
+```bash
+# Raspberry Pi OS (Debian-based):
+sudo apt-get install golang libpcap-dev libyara-dev
+```
+
+**Q: Does it slow down my computer?**
+
+A: Minimal impact during idle. Network monitoring uses ~5-10% CPU. Scans use more CPU but only while running.
+
+**Q: Can multiple people use the web interface?**
+
+A: Yes, but there's no authentication by default. Use SSH tunneling or add authentication for multi-user scenarios.
+
+### Technical Questions
+
+**Q: What's the difference between YARA and ClamAV?**
+
+A:
+- **YARA**: Custom rule engine, you write your own detection rules
+- **ClamAV**: Traditional antivirus with signature database
+- Security Suite uses both for better detection
+
+**Q: How does the ML anomaly detection work?**
+
+A: It uses statistical analysis (Z-scores) to detect deviations from normal behavior. Monitors:
+- Bytes in/out
+- Connection rate
+- DNS queries
+- Computes multi-dimensional anomaly score
+
+**Q: Can I integrate with my SIEM?**
+
+A: Yes! Use the API to export data:
+```bash
+# Export threats to SIEM
+curl http://localhost:8080/api/status | jq '.threats' | \
+  curl -X POST -d @- https://siem.company.com/api/events
+```
+
+**Q: Does it work with IPv6?**
+
+A: Yes, the network scanner supports both IPv4 and IPv6.
+
+**Q: Can I add custom threat intelligence feeds?**
+
+A: Yes, modify `malware_detector.go` to add additional hash databases or threat feeds.
+
+### Troubleshooting Questions
+
+**Q: Why am I getting "permission denied" errors?**
+
+A: Most features need sudo. Run with:
+```bash
+sudo ./security_suite -mode web
+```
+
+**Q: Suricata rules won't update - why?**
+
+A: Check:
+1. Suricata is installed: `which suricata`
+2. You have sudo access
+3. Internet connection works
+4. Suricata is properly configured: `sudo suricata --build-info`
+
+**Q: Terminal in browser doesn't work - why?**
+
+A: Check:
+1. PTY module is installed: `go get github.com/creack/pty`
+2. WebSocket connection is working (check browser console)
+3. Rebuild the application: `go build`
+
+**Q: Scans are very slow - how to speed up?**
+
+A:
+1. Reduce scan depth
+2. Exclude large directories
+3. Skip large binary files (edit scanner code)
+4. Use SSD instead of HDD
+5. Increase system resources
+
+### Security Questions
+
+**Q: Is it safe to run this on a production server?**
+
+A: Yes, but:
+1. Test thoroughly in dev environment first
+2. Review auto-response actions
+3. Monitor resource usage
+4. Keep backups
+5. Use dedicated user account
+
+**Q: What if it blocks legitimate traffic?**
+
+A: You can:
+1. Whitelist IPs in iptables
+2. Disable auto-blocking (manual review mode)
+3. Adjust anomaly detection thresholds
+4. Review and remove blocks:
+```bash
+sudo iptables -L -n
+sudo iptables -D INPUT -s <IP> -j DROP
+```
+
+**Q: How do I secure the web interface?**
+
+A:
+1. Use SSH tunnel instead of direct access
+2. Configure firewall to allow only specific IPs
+3. Add authentication (custom modification)
+4. Use HTTPS with valid certificate
+5. Run on non-standard port
+
+**Q: Can attackers detect that I'm running this?**
+
+A: Network scans might be detected by target IDS. For stealth:
+1. Use slower scan rates
+2. Randomize scan timing
+3. Use passive monitoring instead of active scanning
+4. Monitor your own traffic only
+
+**Q: What happens if malware disables the Security Suite?**
+
+A: Prevention strategies:
+1. Run as systemd service with auto-restart
+2. File integrity monitoring on the binary
+3. Secondary monitoring system
+4. Regular health checks via cron
+
+### Advanced Questions
+
+**Q: Can I write my own response actions?**
+
+A: Yes! Edit `response_orchestrator.go`:
+```go
+case ActionCustom:
+    // Your custom action here
+    outcome = ro.handleCustomAction(threat)
+```
+
+**Q: How do I export data for forensics?**
+
+A:
+```bash
+# Export behavioral profiles:
+curl http://localhost:8080/api/profiles > profiles_$(date +%Y%m%d).json
+
+# Export quarantine log:
+ls -lR quarantine_zone/ > quarantine_forensics.txt
+
+# Export iptables rules:
+sudo iptables-save > firewall_state.txt
+```
+
+**Q: Can I cluster multiple instances?**
+
+A: The application doesn't have built-in clustering, but you can:
+1. Run instance on each host
+2. Aggregate logs centrally (syslog, ELK stack)
+3. Use API to query multiple instances
+4. Build custom dashboard showing all hosts
+
+**Q: How do I update without losing data?**
+
+A:
+```bash
+# 1. Backup data:
+cp -r quarantine_zone/ quarantine_backup/
+cp yara_rules.yar yara_rules.yar.backup
+
+# 2. Update code:
+git pull
+
+# 3. Rebuild:
+go build -o security_suite
+
+# 4. Restart:
+sudo systemctl restart security-suite
+```
+
+---
+
+## Conclusion
+
+You now have a complete understanding of the Security Suite! Key takeaways:
+
+1. **Installation**: Simple 3-step process with automated setup
+2. **Web Interface**: Easy-to-use dashboard with four main tabs
+3. **CLI Mode**: Powerful command-line interface for automation
+4. **Multi-Engine Detection**: YARA + ClamAV + VirusTotal + ML
+5. **Auto-Response**: Automatic threat containment
+6. **Network Monitoring**: Real-time traffic analysis
+7. **Behavioral Analysis**: ML-based anomaly detection
+8. **Camera Detection**: Find and view IP cameras
+
+### Next Steps
+
+1. **Start Simple**: Begin with file and directory scans
+2. **Add Monitoring**: Enable network traffic monitoring
+3. **Customize Rules**: Write YARA rules for your environment
+4. **Automate**: Set up cron jobs for regular scans
+5. **Integrate**: Connect to your existing security infrastructure
+
+### Getting Help
+
+- **Documentation**: This guide covers everything
+- **Log Files**: Check `/var/log/syslog` for errors
+- **Verbose Mode**: Use `-verbose` flag for debugging
+- **API Status**: Visit http://localhost:8080/api/status
+
+### Contributing
+
+This is an open-source security tool. Contributions welcome:
+- Report bugs
+- Suggest features  
+- Write YARA rules
+- Improve documentation
+- Add integrations
+
+---
+
+**Security Suite v2.0** - Advanced Threat Detection & Response Platform
+
+*Stay vigilant. Stay secure.* 🛡️

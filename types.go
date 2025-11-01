@@ -1,6 +1,10 @@
 package main
 
 import (
+	"math/rand"
+	"net"
+	"regexp"
+	"sync"
 	"time"
 )
 
@@ -75,6 +79,7 @@ type BehaviorProfile struct {
 	FeatureVector        []float64          `json:"feature_vector"`
 	AlertHistory         []ThreatIndicator  `json:"alert_history"`
 	AnomalyScore         float64            `json:"anomaly_score"`
+	AnomalyScoreHistory  []float64          `json:"anomaly_score_history"`
 	IsQuarantined        bool               `json:"is_quarantined"`
 }
 
@@ -174,4 +179,201 @@ type IDSAlert struct {
 type LogMessage struct {
 	Level string
 	Text  string
+}
+
+// ServiceInfo holds banner and version data for a discovered service
+type ServiceInfo struct {
+	Port       int
+	Name       string
+	Version    string
+	Product    string
+	Banner     string
+	ExtraInfo  string
+	Hostname   string
+	OS         string
+	DeviceType string
+	CPE        []string
+}
+
+// Vulnerability holds a detected vulnerability finding
+type Vulnerability struct {
+	ID          string
+	Description string
+	Severity    ThreatLevel
+	CVSS        float64
+	Port        int
+	Service     string
+	Mitigation  string
+	References  []string
+}
+
+// MalwareBehavior defines patterns associated with known malware
+type MalwareBehavior struct {
+	Ports     []int
+	Protocols []string
+	Patterns  []string
+	Severity  ThreatLevel
+	IOCs      map[string]string
+}
+
+// OSFingerprint contains OS detection results
+type OSFingerprint struct {
+	IP             string
+	OS             string
+	Accuracy       int
+	Vendor         string
+	OSFamily       string
+	OSGeneration   string
+	DeviceType     string
+	TTL            int
+	WindowSize     int
+	TCPFingerprint string
+	Services       map[int]*ServiceInfo
+}
+
+// BaselineStatistics holds statistical baselines for anomaly detection
+type BaselineStatistics struct {
+	BytesInMean    float64
+	BytesInStdDev  float64
+	BytesOutMean   float64
+	BytesOutStdDev float64
+	ConnRateMean   float64
+	ConnRateStdDev float64
+	DNSCountMean   float64
+	DNSCountStdDev float64
+	LastUpdated    time.Time
+}
+
+// IsolationForest implements isolation forest algorithm for anomaly detection
+type IsolationForest struct {
+	Trees         []*IsolationTree
+	NumTrees      int
+	SubsampleSize int
+	MaxDepth      int
+	TrainingData  [][]float64
+	mu            sync.RWMutex
+	rng           *rand.Rand
+}
+
+// IsolationTree represents a single tree in the isolation forest
+type IsolationTree struct {
+	Root     *IsolationNode
+	MaxDepth int
+}
+
+// IsolationNode represents a node in the isolation tree
+type IsolationNode struct {
+	SplitFeature int
+	SplitValue   float64
+	Left         *IsolationNode
+	Right        *IsolationNode
+	Size         int
+	IsLeaf       bool
+}
+
+// OSSignature defines a production-grade signature for a specific OS
+type OSSignature struct {
+	ID           string
+	OS           string
+	Confidence   int
+	TTL          []int
+	WindowSize   []int
+	TCPFlags     []string
+	TCPOptions   []string
+	MatchContext string
+}
+
+// ServiceSignature defines patterns for service identification
+type ServiceSignature struct {
+	Service     string
+	Pattern     *regexp.Regexp
+	VersionExpr *regexp.Regexp
+	ProbeFunc   func(ip string, port int) *ServiceInfo
+}
+
+// TLSInfo contains SSL/TLS certificate information
+type TLSInfo struct {
+	Version      string
+	Cipher       string
+	Issuer       string
+	Subject      string
+	NotBefore    time.Time
+	NotAfter     time.Time
+	IsExpired    bool
+	IsSelfSigned bool
+	SANs         []string
+}
+
+// Helper functions
+func containsInt(s []int, e int) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
+func containsString(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
+func isPrivateIP(ipStr string) bool {
+	ip := net.ParseIP(ipStr)
+	if ip == nil {
+		return false
+	}
+
+	if ip.To4() != nil {
+		privateRanges := []struct {
+			start string
+			end   string
+		}{
+			{"10.0.0.0", "10.255.255.255"},
+			{"172.16.0.0", "172.31.255.255"},
+			{"192.168.0.0", "192.168.255.255"},
+			{"127.0.0.0", "127.255.255.255"},
+			{"169.254.0.0", "169.254.255.255"},
+		}
+
+		for _, r := range privateRanges {
+			start := net.ParseIP(r.start).To4()
+			end := net.ParseIP(r.end).To4()
+			if ipInRange(ip.To4(), start, end) {
+				return true
+			}
+		}
+		return false
+	}
+
+	if ip.To16() != nil && ip.To4() == nil {
+		if ip.IsPrivate() {
+			return true
+		}
+	}
+
+	return false
+}
+
+func ipInRange(ip, start, end net.IP) bool {
+	if len(ip) != len(start) || len(ip) != len(end) {
+		return false
+	}
+	for i := range ip {
+		if ip[i] < start[i] {
+			return false
+		}
+		if ip[i] > end[i] {
+			return false
+		}
+		if ip[i] > start[i] && ip[i] < end[i] {
+			return true
+		}
+	}
+	return true
 }
