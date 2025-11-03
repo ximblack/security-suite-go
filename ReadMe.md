@@ -4,7 +4,7 @@ The web browser based user interface comes as is without express warranty relate
 I have made every reasonable attempt to make it as secure as I could while maintaining its functionality.
 It IS not nor will it ever be supported in any way. It only exists to demonstrate the possibility of inclusion.
 The files that still say Buildable with issues are no longer necessary within the build I am just too lazy to remove them for the time being.
-There may still be some useful code in them for someoen wanting to tweak this project to suit their own needs. 
+There may still be some useful code in them for someone wanting to tweak this project to suit their own needs. 
 
 Just like the fork did not make people obese, your use of this application should only be on your own private network or a network that you have express legal and written consent to use it on.
 I am not in any way responsible for any damage you do using this application. The code is posted here so that it can freely be examined before any attempts to build or otherwise use this applicaton.
