@@ -1,8 +1,12 @@
-THIS IS STILL IN CONCEPT STAGES.
-THERE ARE KNOWN BUGS AND SECURITY RELATED ISSUES THAT I AM IN THE PROCESS OF IRONING OUT.
-THERE ARE ALSO ADDITIONAL FUNCTIONAL FEATURES COMING IN THE NEXT VERSION.
-THIS WILL COMPILE, IT WILL RUN, HOWEVER THERE ARE STILL SOME ISSUES WITH THE WEB UI 
-AND HOW THE WEB SOCKET CONNECTIONS ARE ESATBLISHED AND MAINTAINED.
+This Project has been an exercise in AI manipulation. (once you provide the code, it will help you fix it regardless of what that code may be)
+This project contains real world exploits FOR EDUCATIONAL PURPOSES ONLY.
+The web browser based user interface comes as is without express warranty related to its security or functionality.
+I have made every reasonable attempt to make it as secure as I could while maintaining its functionality.
+It IS not nor will it ever be supported in any way. It only exists to demonstrate the possibility of inclusion.
+
+Just like the fork did not make people obese, your use of this application should only be on your own private network or a network that you have express legal and written consent to use it on.
+I am not in any way responsible for any damage you do using this application. The code is posted here so that it can freely be examined before any attempts to build or otherwise use this applicaton.
+I will work more on a better much more comprehensive version of this file through out the coming week that includes specific commands and such for command line utilization which is where you are likely to find the majority of the true intended functionality.
 
 # Security Suite - Complete Administrator's Guide
 
