@@ -52,7 +52,7 @@ func NewTerminalManager() *TerminalManager {
 }
 
 // CreateSession creates a new fully interactive bash terminal session
-func (tm *TerminalManager) CreateSession() (*TerminalSession, error) {
+func (tm *TerminalManager) CreateSession(rows, cols uint16) (*TerminalSession, error) {
 	sessionID := fmt.Sprintf("term_%d", time.Now().UnixNano())
 
 	log.Printf("[TerminalManager] Creating session: %s", sessionID)
@@ -360,6 +360,16 @@ func (ts *TerminalSession) IsActive() bool {
 	return ts.Active
 }
 
+// Write sends data to the terminal
+func (ts *TerminalSession) Write(data []byte) (int, error) {
+	return ts.PTY.Write(data)
+}
+
+// Read reads data from the terminal
+func (ts *TerminalSession) Read(p []byte) (int, error) {
+	return ts.PTY.Read(p)
+}
+
 // Close gracefully closes the terminal session
 func (ts *TerminalSession) Close() error {
 	ts.mu.Lock()
@@ -408,7 +418,7 @@ func (ts *TerminalSession) Close() error {
 // Note: This helper uses a generous timeout to ensure completion, but
 // is less reliable than a fully interactive session listening for the prompt.
 func (tm *TerminalManager) ExecuteCommand(command string) (string, error) {
-	session, err := tm.CreateSession()
+	session, err := tm.CreateSession(24, 80)
 	if err != nil {
 		return "", err
 	}
@@ -438,7 +448,7 @@ func (tm *TerminalManager) ExecuteCommand(command string) (string, error) {
 
 // ExecuteCommandWithSudo executes a command with sudo, robustly handling the interactive password prompt
 func (tm *TerminalManager) ExecuteCommandWithSudo(command, password string) (*TerminalSession, error) {
-	session, err := tm.CreateSession()
+	session, err := tm.CreateSession(24, 80)
 	if err != nil {
 		return nil, err
 	}

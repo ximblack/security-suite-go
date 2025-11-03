@@ -293,6 +293,7 @@ func (ssw *SecurityScannerWrapper) analyzeHost(ip string, openPorts []int) []Thr
 	}
 
 	// C. Behavioral Anomaly Check (BehavioralAnalyzer)
+	// Note: AnalyzeProfile requires prior data collection, so this may not yield results immediately
 	behavioralIndicators, _ := ssw.BehaviorAnalyzer.AnalyzeProfile(ip)
 
 	if len(behavioralIndicators) > 0 {

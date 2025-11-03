@@ -69,18 +69,22 @@ type ThreatEvent struct {
 // BehaviorProfile holds aggregated data for a single IP address.
 type BehaviorProfile struct {
 	DeviceIP             string             `json:"device_ip"`
-	ConnectionFrequency  map[string]float64 `json:"connection_frequency"`
+	ConnectionFrequency  int                `json:"connection_frequency"`
 	DataTransferPattern  []float64          `json:"data_transfer_pattern"` // 24 hourly slots
 	ActiveHours          []int              `json:"active_hours"`          // Hours 0-23
 	ProtocolDistribution map[string]float64 `json:"protocol_distribution"`
 	TypicalServices      []int              `json:"typical_services"`
 	FirstSeen            time.Time          `json:"first_seen"`
 	LastUpdate           time.Time          `json:"last_update"`
+	LastUpdateTime       time.Time          `json:"last_update_time"`
 	FeatureVector        []float64          `json:"feature_vector"`
 	AlertHistory         []ThreatIndicator  `json:"alert_history"`
 	AnomalyScore         float64            `json:"anomaly_score"`
 	AnomalyScoreHistory  []float64          `json:"anomaly_score_history"`
 	IsQuarantined        bool               `json:"is_quarantined"`
+	TotalBytesIn         int64              `json:"total_bytes_in"`
+	TotalBytesOut        int64              `json:"total_bytes_out"`
+	RecentDurations      []float64          `json:"recent_durations"`
 }
 
 // ThreatPattern defines a signature used for detection.
@@ -207,8 +211,79 @@ type Vulnerability struct {
 	References  []string
 }
 
+// WebVulnerability represents a vulnerability found by the web scanner
+type WebVulnerability struct {
+	Timestamp   time.Time   `json:"timestamp"`
+	VulnType    string      `json:"vuln_type"`
+	Severity    ThreatLevel `json:"severity"`
+	URL         string      `json:"url"`
+	Method      string      `json:"method"`
+	Parameter   string      `json:"parameter"`
+	Payload     string      `json:"payload"`
+	Evidence    string      `json:"evidence"`
+	Description string      `json:"description"`
+	Remediation string      `json:"remediation"`
+	CVSS        float64     `json:"cvss"`
+	CWE         string      `json:"cwe"`
+	OWASP       string      `json:"owasp"`
+	Confidence  string      `json:"confidence"` // High, Medium, Low
+}
+
+// ScanConfig defines web security scan configuration
+type ScanConfig struct {
+	TargetURL           string              `json:"target_url"`
+	ScanDepth           int                 `json:"scan_depth"`
+	EnableCrawling      bool                `json:"enable_crawling"`
+	TestAuthentication  bool                `json:"test_authentication"`
+	TestSQLInjection    bool                `json:"test_sql_injection"`
+	TestXSS             bool                `json:"test_xss"`
+	TestCSRF            bool                `json:"test_csrf"`
+	TestLFI             bool                `json:"test_lfi"`
+	TestRCE             bool                `json:"test_rce"`
+	TestSSRF            bool                `json:"test_ssrf"`
+	TestXXE             bool                `json:"test_xxe"`
+	TestOpenRedirect    bool                `json:"test_open_redirect"`
+	TestPathTraversal   bool                `json:"test_path_traversal"`
+	TestSecurityHeaders bool                `json:"test_security_headers"`
+	TestSSL             bool                `json:"test_ssl"`
+	AuthCredentials     map[string]string   `json:"auth_credentials"`
+	ExcludePatterns     []string            `json:"exclude_patterns"`
+	CustomPayloads      map[string][]string `json:"custom_payloads"`
+}
+
+// ExtractedHash represents a hash extracted from a forensic source
+type ExtractedHash struct {
+	Hash       string `json:"hash"`
+	Username   string `json:"username"`
+	SourceFile string `json:"source_file"`
+	HashType   string `json:"hash_type"`
+	Context    string `json:"context"`
+}
+
+// SystemReconData holds comprehensive reconnaissance information
+type SystemReconData struct {
+	Timestamp        time.Time       `json:"timestamp"`
+	HostName         string          `json:"host_name"`
+	TargetIP         string          `json:"target_ip"`
+	ExtractedHashes  []ExtractedHash `json:"extracted_hashes"`
+	RunningProcesses []interface{}   `json:"running_processes"` // Actual struct is ProcEntry
+	SensitiveFiles   []string        `json:"sensitive_files"`
+}
+
+// HashCrackingJobStatus holds the status of a long-running hash cracking job
+type HashCrackingJobStatus struct {
+	SessionID   string            `json:"session_id"`
+	Status      string            `json:"status"` // e.g., "running", "finished", "stopped"
+	Progress    float64           `json:"progress"`
+	Cracked     map[string]string `json:"cracked_hashes"` // map[hash]plaintext
+	TotalHashes int               `json:"total_hashes"`
+	LastUpdated time.Time         `json:"last_updated"`
+	Error       string            `json:"error"`
+}
+
 // MalwareBehavior defines patterns associated with known malware
 type MalwareBehavior struct {
+	Name      string
 	Ports     []int
 	Protocols []string
 	Patterns  []string
@@ -233,15 +308,16 @@ type OSFingerprint struct {
 
 // BaselineStatistics holds statistical baselines for anomaly detection
 type BaselineStatistics struct {
-	BytesInMean    float64
-	BytesInStdDev  float64
-	BytesOutMean   float64
-	BytesOutStdDev float64
-	ConnRateMean   float64
-	ConnRateStdDev float64
-	DNSCountMean   float64
-	DNSCountStdDev float64
-	LastUpdated    time.Time
+	BytesInMean     float64
+	BytesInStdDev   float64
+	BytesOutMean    float64
+	BytesOutStdDev  float64
+	ConnRateMean    float64
+	ConnRateStdDev  float64
+	DNSCountMean    float64
+	DNSCountStdDev  float64
+	AvgDurationMean float64
+	LastUpdated     time.Time
 }
 
 // IsolationForest implements isolation forest algorithm for anomaly detection
@@ -249,7 +325,9 @@ type IsolationForest struct {
 	Trees         []*IsolationTree
 	NumTrees      int
 	SubsampleSize int
+	SampleSize    int
 	MaxDepth      int
+	NumFeatures   int
 	TrainingData  [][]float64
 	mu            sync.RWMutex
 	rng           *rand.Rand
@@ -263,12 +341,14 @@ type IsolationTree struct {
 
 // IsolationNode represents a node in the isolation tree
 type IsolationNode struct {
-	SplitFeature int
-	SplitValue   float64
-	Left         *IsolationNode
-	Right        *IsolationNode
-	Size         int
-	IsLeaf       bool
+	SplitFeature      int
+	SplitValue        float64
+	SplitFeatureIndex int
+	Left              *IsolationNode
+	Right             *IsolationNode
+	Size              int
+	IsLeaf            bool
+	IsExternal        bool
 }
 
 // OSSignature defines a production-grade signature for a specific OS

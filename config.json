@@ -1,0 +1,5 @@
+{
+  "selected_nic": "eth0",
+  "geoip_path": "/usr/local/share/GeoIP/GeoLite2-City.mmdb",
+  "api_keys": {}
+}

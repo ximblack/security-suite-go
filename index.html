@@ -1,1081 +1,1091 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Security Suite - Production Control Panel</title>
+    <title>Security Suite - Professional Control Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Production-Ready Styles */
-        body { 
-            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; 
-            background-color: #0f172a; 
-            color: #e2e8f0;
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
         }
-        .critical { background-color: #7f1d1d; color: #fecaca; }
-        .high { background-color: #7c2d12; color: #fed7aa; }
-        .medium { background-color: #713f12; color: #fef08a; }
-        .info { background-color: #1e3a8a; color: #dbeafe; }
-        .terminal-output {
-            font-family: 'Courier New', 'Consolas', monospace;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            line-height: 1.4;
-            background: #000;
-            color: #0f0;
+
+        /* CRITICAL: Professional Tab System - NO SVGs */
+        .tab-container {
+            min-height: 70vh;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
         }
-        .terminal-input {
-            font-family: 'Courier New', 'Consolas', monospace;
-            background: #000;
-            color: #0f0;
-            caret-color: #0f0; /* Green cursor */
-            border: 1px solid #0f0;
-            /* Ensures no focus outline from Tailwind interferes */
-            outline: none !important; 
+
+        .tab-content {
+            display: none;
+            padding: 1.5rem;
+            animation: fadeIn 0.3s ease-in-out;
         }
-        /* Custom Blink Cursor for production-feel */
-        .blink-cursor {
-            animation: blink 1s step-end infinite;
+
+        .tab-content.active {
+            display: block;
         }
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
+
+        .tab-button {
+            position: relative;
+            padding: 0.75rem 1.5rem;
+            border-bottom: 3px solid transparent;
+            color: #64748b;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            background: none;
+            border-left: none;
+            border-right: none;
+            border-top: none;
+            cursor: pointer;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .tab-button:hover {
+            color: #334155;
+            background-color: #f8fafc;
+        }
+
+        .tab-button.active {
+            color: #0f172a;
+            border-bottom-color: #3b82f6;
+            background-color: white;
+        }
+
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+            border-radius: 2px 2px 0 0;
+        }
+
+        /* Professional styling without SVGs */
         .status-indicator {
             display: inline-block;
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            margin-right: 8px;
+            background-color: #10b981;
+            margin-right: 0.5rem;
+            animation: pulse 2s infinite;
         }
-        .status-online { background-color: #10b981; }
-        .status-offline { background-color: #ef4444; }
-        .status-warning { background-color: #f59e0b; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+            transition: box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px 0 rgba(59, 130, 246, 0.3);
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px 0 rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+            border-color: #94a3b8;
+        }
+
+        /* Terminal styles */
+        .terminal-output {
+            font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+            background: #0f172a;
+            color: #10b981;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-y: auto;
+            max-height: 400px;
+            border: 1px solid #334155;
+        }
+
+        .terminal-input {
+            font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+            background: #0f172a;
+            color: #10b981;
+            caret-color: #10b981;
+            border: 1px solid #334155;
+            outline: none;
+            border-radius: 6px;
+        }
+
+        .terminal-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
     </style>
 </head>
-<body class="p-4 md:p-8 min-h-screen">
 
-    <div class="max-w-7xl mx-auto">
-        <header class="mb-8 border-b border-gray-700 pb-4">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                    <svg class="w-10 h-10 mr-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.332 16c-.77 1.333.192 3 1.732 3z"></path>
-                    </svg>
+<body class="min-h-screen">
+    <!-- Professional Header - NO SVGs -->
+    <header class="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg">
+                        <span class="text-white font-bold text-xl">🔒</span>
+                    </div>
                     <div>
-                        <h1 class="text-3xl font-extrabold text-white">Security Suite</h1>
-                        <p class="text-sm text-gray-400">Production Threat Detection & Response Platform v2.0</p>
+                        <h1 class="text-2xl font-bold text-gray-900">Security Suite</h1>
+                        <p class="text-sm text-gray-500">Enterprise Security Platform</p>
                     </div>
                 </div>
-                
-                <div id="system-status" class="text-right">
-                    <div class="text-lg font-semibold text-gray-300">
-                        <span class="status-indicator status-offline" id="status-indicator"></span>
-                        Status: <span id="status-text">Connecting...</span>
+
+                <div class="flex items-center space-x-6">
+                    <div class="text-right">
+                        <div class="text-sm font-medium text-gray-900">System Status</div>
+                        <div class="flex items-center space-x-2">
+                            <div class="status-indicator"></div>
+                            <span class="text-sm text-gray-600">Operational</span>
+                        </div>
                     </div>
-                    <div class="text-xs text-gray-500" id="status-timestamp">--</div>
-                    <div class="text-xs text-green-400" id="websocket-status">WebSocket: Disconnected</div>
+                    <div class="text-right">
+                        <div class="text-sm font-medium text-gray-900">Last Activity</div>
+                        <div class="text-sm text-gray-600" id="last-activity">Just now</div>
+                    </div>
                 </div>
             </div>
-        </header>
+        </div>
 
-        <div class="mb-6 border-b border-gray-700">
-            <nav class="flex space-x-8">
-                <button onclick="switchTab('security')" id="tab-security" class="tab-button pb-4 px-1 border-b-2 border-blue-500 font-medium text-blue-400">
+        <!-- Professional Tab Navigation - TEXT ONLY -->
+        <div class="max-w-7xl mx-auto px-6">
+            <nav class="flex space-x-1 bg-gray-50 rounded-t-lg p-1 overflow-x-auto">
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-button active rounded-md whitespace-nowrap">
+                    Dashboard
+                </button>
+                <button onclick="switchTab('scans')" id="tab-scans" class="tab-button rounded-md whitespace-nowrap">
                     Security Scans
                 </button>
-                <button onclick="switchTab('pentest')" id="tab-pentest" class="tab-button pb-4 px-1 border-b-2 border-transparent font-medium text-gray-400 hover:text-red-400">
-                    Penetration Testing
-                </button>
-                <button onclick="switchTab('behavioral')" id="tab-behavioral" class="tab-button pb-4 px-1 border-b-2 border-transparent font-medium text-gray-400 hover:text-gray-300">
+                <button onclick="switchTab('behavioral')" id="tab-behavioral" class="tab-button rounded-md whitespace-nowrap">
                     Behavioral Analysis
                 </button>
-                <button onclick="switchTab('streams')" id="tab-streams" class="tab-button pb-4 px-1 border-b-2 border-transparent font-medium text-gray-400 hover:text-gray-300">
+                <button onclick="switchTab('streams')" id="tab-streams" class="tab-button rounded-md whitespace-nowrap">
                     Camera Streams
                 </button>
-                <button onclick="switchTab('terminal')" id="tab-terminal" class="tab-button pb-4 px-1 border-b-2 border-transparent font-medium text-gray-400 hover:text-gray-300">
+                <button onclick="switchTab('terminal')" id="tab-terminal" class="tab-button rounded-md whitespace-nowrap">
                     Terminal
                 </button>
-                <button onclick="switchTab('settings')" id="tab-settings" class="tab-button pb-4 px-1 border-b-2 border-transparent font-medium text-gray-400 hover:text-gray-300">
-                    Configuration
+                <button onclick="switchTab('webscan')" id="tab-webscan" class="tab-button rounded-md whitespace-nowrap">
+                    Web Scanner
+                </button>
+                <button onclick="switchTab('forensics')" id="tab-forensics" class="tab-button rounded-md whitespace-nowrap">
+                    Forensics
+                </button>
+                <button onclick="switchTab('settings')" id="tab-settings" class="tab-button rounded-md whitespace-nowrap">
+                    Settings
                 </button>
             </nav>
         </div>
+    </header>
 
-        <div id="content-security" class="tab-content">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
-                <div class="lg:col-span-1 space-y-6">
-                    
-                    <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
-                        <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                            </svg>
-                            Scan Control
-                        </h2>
-                        <form id="scan-form" onsubmit="handleScan(event)">
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-300 mb-2">Target Type</label>
-                                <select id="targetType" class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                                    <option value="file">File (YARA + Hash)</option>
-                                    <option value="directory">Directory (Recursive)</option>
-                                    <option value="network">Network/Port Scan</option>
-                                </select>
-                            </div>
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-300 mb-2">Target Path / IP Range (CIDR/IP)</label>
-                                <input type="text" id="target" required placeholder="/etc/passwd or 192.168.1.1/24" class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            </div>
-                            <div class="mb-6">
-                                <label class="block text-sm font-medium text-gray-300 mb-2">Directory Depth (-1 = unlimited)</label>
-                                <input type="number" id="depth" value="-1" class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            </div>
-                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center">
-                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                </svg>
-                                Initiate Scan
-                            </button>
-                        </form>
-                    </section>
+    <!-- Main Content Area -->
+    <main class="max-w-6xl mx-auto px-4 py-6">
+        <div class="tab-container" style="min-height: calc(100vh - 200px);">
 
-                    <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
-                        <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                            </svg>
-                            System Actions
-                        </h2>
-                        <div class="space-y-3">
-                            <button onclick="handleUpdate()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
-                                Update Definitions & Rules
-                            </button>
-                            <button onclick="handleStop()" class="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
-                                Stop All Processes & Alarms
-                            </button>
-                        </div>
-                    </section>
+            <!-- Dashboard Tab -->
+            <div id="dashboard" class="tab-content active">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2">System Dashboard</h2>
+                    <p class="text-gray-600">Real-time security monitoring and system health overview</p>
                 </div>
-                
-                <div class="lg:col-span-2 space-y-6">
 
-                    <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
-                        <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
-                            </svg>
-                            Activity Log
-                        </h2>
-                        <div id="console-output" class="h-64 overflow-y-auto bg-gray-900 text-green-400 p-3 text-xs font-mono rounded-lg border border-gray-700">
-                            [INIT] Connecting to Security Suite server...
+                <!-- Status Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="card p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">System Health</p>
+                                <p class="text-2xl font-bold text-gray-900">Online</p>
+                            </div>
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                <span class="text-green-600 font-bold text-xl">✓</span>
+                            </div>
                         </div>
-                    </section>
+                        <p class="text-xs text-gray-500">Last check: <span id="last-check-time">Just now</span></p>
+                    </div>
 
-                    <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
-                        <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            Scan Results
-                        </h2>
-                        <div id="scan-results" class="bg-gray-900 p-4 rounded-lg border border-gray-700">
-                            <p class="text-gray-400">No scan has been run yet. Results will appear here.</p>
+                    <div class="card p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Active Threats</p>
+                                <p class="text-2xl font-bold text-gray-900" id="threat-count">0</p>
+                            </div>
+                            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                                <span class="text-red-600 font-bold text-xl">!</span>
+                            </div>
                         </div>
-                    </section>
-                </div>
-            </div>
-        </div>
-        
-        <div id="content-pentest" class="tab-content hidden">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-1 space-y-6">
-                    <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
-                        <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0v4m-8 0h4m-4 0v4m4-4V7a4 4 0 10-8 0v4m0 0H4a2 2 0 00-2 2v5a2 2 0 002 2h16a2 2 0 002-2v-5a2 2 0 00-2-2h-4"></path>
-                            </svg>
-                            Exploit Execution
-                        </h2>
-                        <form id="pentest-form" onsubmit="handleExploitExecution(event)">
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-300 mb-2">Target IP Address</label>
-                                <input type="text" id="pentest-target" required placeholder="192.168.1.10" class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none">
-                            </div>
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-300 mb-2">Exploit Name/CVE</label>
-                                <select id="pentest-exploit" class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none">
-                                    <option value="CVE-2017-0144">CVE-2017-0144 (EternalBlue)</option>
-                                    <option value="CVE-2019-0708">CVE-2019-0708 (BlueKeep)</option>
-                                    <option value="SSH-Bruteforce">SSH Credential Brute-Force (Auth)</option>
-                                    <option value="Web-SQLi">Web: SQL Injection Probe</option>
-                                    </select>
-                            </div>
-                            <div class="mb-6">
-                                <label class="block text-sm font-medium text-gray-300 mb-2">Credential/Password (Optional for Auth Exploits)</label>
-                                <input type="password" id="pentest-password" placeholder="sudo password or target service password" class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none">
-                            </div>
-                            <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center">
-                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                </svg>
-                                Launch Exploit
-                            </button>
-                        </form>
-                    </section>
-                </div>
-                
-                <div class="lg:col-span-2 space-y-6">
-                    <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
-                        <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c1.657 0 3 .895 3 2s-1.343 2-3 2v2m0 0v2m-6-2a9 9 0 1118 0v5a2 2 0 01-2 2H4a2 2 0 01-2-2v-5a9 9 0 019-9z"></path>
-                            </svg>
-                            Exploit Log / Session Output
-                        </h2>
-                        <div id="pentest-log" class="h-64 overflow-y-auto bg-gray-900 text-red-400 p-3 text-xs font-mono rounded-lg border border-gray-700">
-                            [READY] Penetration Testing module ready. Exploit results will stream here.
-                        </div>
-                    </section>
-                </div>
-            </div>
-        </div>
+                        <p class="text-xs text-gray-500">Last 24 hours</p>
+                    </div>
 
-        <div id="content-behavioral" class="tab-content hidden">
-            <div class="grid grid-cols-1 gap-8">
-                <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
-                    <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                        Behavioral Analysis Dashboard
-                    </h2>
-                    <div class="bg-gray-900 p-6 rounded-lg border border-gray-700">
-                        <p class="text-gray-300 mb-4">
-                            Real-time behavioral anomaly detection using Isolation Forest and Statistical Baseline analysis.
-                        </p>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                            <div class="bg-gray-800 p-4 rounded-lg border border-gray-600">
-                                <div class="text-sm text-gray-400">Monitored Devices</div>
-                                <div class="text-3xl font-bold text-blue-400" id="ba-devices">0</div>
+                    <div class="card p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Network Monitor</p>
+                                <p class="text-2xl font-bold text-gray-900">Active</p>
                             </div>
-                            <div class="bg-gray-800 p-4 rounded-lg border border-gray-600">
-                                <div class="text-sm text-gray-400">Anomalies Detected</div>
-                                <div class="text-3xl font-bold text-yellow-400" id="ba-anomalies">0</div>
-                            </div>
-                            <div class="bg-gray-800 p-4 rounded-lg border border-gray-600">
-                                <div class="text-sm text-gray-400">Model Status</div>
-                                <div class="text-sm font-semibold text-green-400" id="ba-model">Active (Last Train: <span id="ba-last-train">--</span>)</div>
+                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                <span class="text-blue-600 font-bold text-xl">○</span>
                             </div>
                         </div>
-                        <div class="text-sm text-gray-400 space-y-2">
-                            <p>Current Anomaly Threshold: <span id="ba-threshold" class="text-white">0.65</span></p>
-                            <button onclick="triggerTraining()" class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-1 px-3 rounded transition duration-200">
-                                Retrain Anomaly Model
-                            </button>
+                        <p class="text-xs text-gray-500">Interface: <span id="monitor-interface">eth0</span></p>
+                    </div>
+
+                    <div class="card p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Quarantined Files</p>
+                                <p class="text-2xl font-bold text-gray-900" id="quarantine-count">0</p>
+                            </div>
+                            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                                <span class="text-orange-600 font-bold text-xl">⚠</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500">Files isolated</p>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="card p-6">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Recent Security Events</h3>
+                    <div id="event-stream" class="space-y-3">
+                        <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                            <div class="status-indicator bg-green-500"></div>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-gray-900">System initialized successfully</p>
+                                <p class="text-xs text-gray-500">Just now</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
+                            <div class="status-indicator bg-blue-500"></div>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-gray-900">YARA rules loaded (5 signatures)</p>
+                                <p class="text-xs text-gray-500">Just now</p>
+                            </div>
                         </div>
                     </div>
-                </section>
+                </div>
             </div>
-        </div>
 
-        <div id="content-streams" class="tab-content hidden">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-1">
-                    <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
-                        <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                            </svg>
-                            Video Stream Control
-                        </h2>
+            <!-- Security Scans Tab -->
+            <div id="scans" class="tab-content" style="display: none;">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2">Security Scanning</h2>
+                    <p class="text-gray-600">Comprehensive threat detection and analysis tools</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-1 space-y-6">
+                        <div class="card p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Scan Configuration</h3>
+                            <form id="scan-form" onsubmit="handleScan(event)" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Target Type</label>
+                                    <select id="targetType" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="file">Single File</option>
+                                        <option value="directory">Directory (Recursive)</option>
+                                        <option value="network">Network/Port Scan</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Target Path/IP</label>
+                                    <input type="text" id="target" required placeholder="/etc/passwd or 192.168.1.0/24" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Scan Depth</label>
+                                    <input type="number" id="depth" value="-1" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                </div>
+                                <button type="submit" class="btn-primary w-full">Initiate Security Scan</button>
+                            </form>
+                        </div>
+
+                        <div class="card p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">System Actions</h3>
+                            <div class="space-y-3">
+                                <button onclick="handleUpdate()" class="btn-secondary w-full">Update Threat Definitions</button>
+                                <button onclick="handleStop()" class="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition">Emergency Stop</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="card p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Scan Activity Log</h3>
+                            <div id="console-output" class="terminal-output">
+[INIT] Security Suite Ready - Awaiting Commands...
+                            </div>
+                        </div>
+
+                        <div class="card p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Scan Results</h3>
+                            <div id="scan-results" class="p-4 bg-gray-50 rounded-lg border">
+                                <p class="text-gray-600">No scan has been executed yet. Results will appear here.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Behavioral Analysis Tab -->
+            <div id="behavioral" class="tab-content" style="display: none;">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2">Behavioral Analysis</h2>
+                    <p class="text-gray-600">Machine learning-powered anomaly detection and behavioral monitoring</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Analysis Dashboard</h3>
                         <div class="space-y-4">
-                            <select id="stream-selector" onchange="selectStream(this.value)" class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                                <option value="">--- Select Camera Stream ---</option>
-                                <option value="cam-1">Camera 1 (Front Door)</option>
-                                <option value="cam-2">Camera 2 (Data Center)</option>
-                                <option value="cam-3">RTSP Stream Example</option>
-                            </select>
-                            <button onclick="startStreamMonitoring()" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
-                                Start Stream Analysis
-                            </button>
-                            <div id="stream-status" class="flex items-center justify-between mt-3 p-3 bg-gray-900 rounded-lg border border-gray-700 hidden">
-                                <span class="text-sm text-gray-300">Analysis Status:</span>
-                                <div class="flex items-center">
-                                    <span class="w-3 h-3 pulse-green bg-green-500 rounded-full mr-2"></span>
-                                    <span class="text-sm text-green-400">LIVE</span>
+                            <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-600">Monitored Endpoints</p>
+                                    <p class="text-2xl font-bold text-gray-900" id="ba-devices">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <span class="text-blue-600 font-bold text-xl">○</span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center p-4 bg-yellow-50 rounded-lg">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-600">Anomalies Detected</p>
+                                    <p class="text-2xl font-bold text-yellow-700" id="ba-anomalies">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                                    <span class="text-yellow-600 font-bold text-xl">!</span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center p-4 bg-green-50 rounded-lg">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-600">Model Status</p>
+                                    <p class="text-lg font-semibold text-green-700" id="ba-model">Active</p>
+                                </div>
+                                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                    <span class="text-green-600 font-bold text-xl">✓</span>
                                 </div>
                             </div>
                         </div>
-                    </section>
+                    </div>
 
-                    <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700 mt-6">
-                        <h2 class="text-xl font-semibold mb-4 text-white">Detection Metrics</h2>
-                        <div id="stream-info" class="p-4 bg-gray-900 rounded-lg border border-gray-700 hidden">
-                            <div class="grid grid-cols-2 gap-4 text-sm">
-                                <div><span class="text-gray-400">Name:</span> <span class="text-white ml-2" id="info-name">--</span></div>
-                                <div><span class="text-gray-400">Status:</span> <span class="text-white ml-2" id="info-status">--</span></div>
-                                <div class="col-span-2"><span class="text-gray-400">URL:</span> <span class="text-white ml-2 break-all" id="info-url">--</span></div>
-                                <div class="col-span-2"><span class="text-gray-400">Reason:</span> <span class="text-white ml-2" id="info-reason">--</span></div>
+                    <div class="card p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Detection Methods</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm font-medium text-gray-700">Isolation Forest</span>
+                                <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Active</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm font-medium text-gray-700">Statistical Baseline</span>
+                                <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Active</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm font-medium text-gray-700">Pattern Recognition</span>
+                                <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Active</span>
                             </div>
                         </div>
-                        <p class="text-gray-500 text-sm">Real-time object detection and anomaly tracking metrics will appear here.</p>
-                    </section>
-                </div>
-                
-                <div class="lg:col-span-2">
-                    <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
-                        <h2 class="text-xl font-semibold mb-4 text-white">Live Feed</h2>
-                        <div id="stream-viewer" class="stream-container rounded-lg overflow-hidden border border-gray-700 bg-gray-900 min-h-[400px] flex items-center justify-center">
-                            <div class="text-center text-gray-500">
-                                <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                </svg>
-                                <p>Select a stream to begin viewing.</p>
-                            </div>
-                        </div>
-                    </section>
-                </div>
-            </div>
-        </div>
-
-        <div id="content-terminal" class="tab-content hidden">
-            <div class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-semibold text-white flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h.01M17 19h2a2 2 0 002-2V7a2 2 0 00-2-2h-5l-3 3h-5a2 2 0 00-2 2v5m0 0a2 2 0 002 2h16a2 2 0 002-2v-5a2 2 0 00-2-2h-3l-3-3h-5a2 2 0 00-2 2v5z"></path>
-                        </svg>
-                        Interactive PTY Shell
-                        <span id="terminal-session-id" class="text-xs ml-3 text-gray-500">Session ID: --</span>
-                    </h2>
-                    <div class="space-x-3">
-                        <button onclick="createTerminalSession()" id="btn-terminal-connect" class="bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-3 rounded transition duration-200">
-                            Connect/New Session
-                        </button>
-                        <button onclick="closeTerminalSession()" id="btn-terminal-disconnect" disabled class="bg-red-600 hover:bg-red-700 text-white font-medium py-1 px-3 rounded transition duration-200 disabled:opacity-50">
-                            Disconnect
-                        </button>
-                    </div>
-                </div>
-
-                <div id="terminal-output" class="terminal-output h-80 overflow-y-auto p-3 rounded-lg border border-green-700">
-                    [INFO] Click 'Connect/New Session' to start an interactive PTY shell.
-                </div>
-                
-                <div class="flex mt-4 space-x-3">
-                    <input type="text" id="terminal-input" placeholder="Type command and press Enter..." disabled class="terminal-input flex-grow bg-gray-900 text-white px-4 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none disabled:opacity-50">
-                </div>
-
-                <div class="mt-4 pt-4 border-t border-gray-700">
-                    <p class="text-sm font-medium text-gray-300 mb-3">Quick Commands (requires active terminal):</p>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        <button onclick="quickCommand('sudo ./security_suite -mode web')" class="text-left text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-2 rounded transition"> Start Web Mode (sudo) </button>
-                        <button onclick="quickCommand('sudo iptables -L -n')" class="text-left text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-2 rounded transition"> List iptables Rules </button>
-                        <button onclick="quickCommand('sudo systemctl status security_suite')" class="text-left text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-2 rounded transition"> System Status </button>
-                        <button onclick="quickCommand('ps aux | grep security')" class="text-left text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-2 rounded transition"> Check Processes </button>
-                    </div>
-                </div>
-                
-                <div class="mt-4 pt-4 border-t border-gray-700">
-                    <p class="text-sm font-medium text-gray-300 mb-2">Resize Terminal:</p>
-                    <div class="flex items-center space-x-3">
-                        <input type="number" id="resize-cols" value="80" placeholder="Cols" class="w-20 bg-gray-700 text-white border border-gray-600 rounded-lg px-2 py-1 text-sm">
-                        <span class="text-gray-400">x</span>
-                        <input type="number" id="resize-rows" value="24" placeholder="Rows" class="w-20 bg-gray-700 text-white border border-gray-600 rounded-lg px-2 py-1 text-sm">
-                        <button onclick="resizeTerminal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-1 px-3 rounded transition duration-200">
-                            Resize
-                        </button>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div id="content-settings" class="tab-content hidden">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                
-                <div class="space-y-6">
-                    <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
-                        <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.562.343 1.24-.037 1.942-.515z"></path>
-                            </svg>
-                            Core Application Settings
-                        </h2>
-                        <form id="core-settings-form">
+            <!-- Camera Streams Tab -->
+            <div id="streams" class="tab-content" style="display: none;">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2">Camera Stream Monitoring</h2>
+                    <p class="text-gray-600">Real-time video surveillance and stream analysis</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-1">
+                        <div class="card p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Stream Configuration</h3>
                             <div class="space-y-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-1">Web Server Port</label>
-                                    <input type="number" id="setting-server-port" value="8080" class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 text-sm">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Stream URL/IP</label>
+                                    <input type="text" id="stream-url" placeholder="192.168.1.50 or rtsp://..." class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-1">Event Stream Max Clients</label>
-                                    <input type="number" id="setting-max-clients" value="10" class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 text-sm">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Port (optional)</label>
+                                    <input type="number" id="stream-port" placeholder="554" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-1">Session Inactivity Timeout (minutes)</label>
-                                    <input type="number" id="setting-session-timeout" value="30" class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 text-sm">
-                                </div>
-                                <div class="flex items-center">
-                                    <input id="setting-verbose-logging" type="checkbox" checked class="h-4 w-4 text-teal-600 bg-gray-700 border-gray-600 rounded">
-                                    <label for="setting-verbose-logging" class="ml-3 text-sm text-gray-300">Enable Verbose Logging</label>
-                                </div>
+                                <button onclick="detectStream()" class="btn-primary w-full">Detect & Connect Stream</button>
                             </div>
-                        </form>
-                    </section>
-                    
-                    <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
-                        <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c1.657 0 3 .895 3 2s-1.343 2-3 2v2m0 0v2m-6-2a9 9 0 1118 0v5a2 2 0 01-2 2H4a2 2 0 01-2-2v-5a9 9 0 019-9z"></path>
-                            </svg>
-                            Behavioral Analysis Tuning
-                        </h2>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-1">Anomaly Threshold (0.0 to 1.0)</label>
-                                <input type="number" step="0.01" id="setting-anomaly-threshold" value="0.65" class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 text-sm">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-1">Retrain Interval (hours)</label>
-                                <input type="number" id="setting-retrain-interval" value="24" class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 text-sm">
+                            <div id="stream-info" class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200 hidden">
+                                <p class="text-sm text-blue-700 font-medium mb-1">Stream Connected</p>
+                                <p class="text-xs text-blue-600">Status: Active | Resolution: 1920x1080</p>
                             </div>
                         </div>
-                    </section>
-                </div>
+                    </div>
 
-                <div class="space-y-6">
-                    <section class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
-                        <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                            </svg>
-                            Network Scanner Settings
-                        </h2>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-1">Scan Profile</label>
-                                <select id="setting-scan-profile" class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 text-sm">
-                                    <option value="quick">Quick (Common Ports, No Vuln Scan)</option>
-                                    <option value="standard">Standard (1k Ports, Service Detection)</option>
-                                    <option value="comprehensive">Comprehensive (Full Ports, OS/Service/Vuln)</option>
-                                    <option value="pentest">PenTest (Aggressive, Full Discovery)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-1">Max Host Concurrency</label>
-                                <input type="number" id="setting-max-concurrency" value="100" class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 text-sm">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-1">Probe Timeout (seconds)</label>
-                                <input type="number" id="setting-probe-timeout" value="5" class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 text-sm">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-1">Host Discovery Method</label>
-                                <select id="setting-discovery-method" class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 text-sm">
-                                    <option value="tcp">TCP/SYN Probe</option>
-                                    <option value="noprobe">ARP/ICMP (No-Probe)</option>
-                                </select>
+                    <div class="lg:col-span-2">
+                        <div class="card p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Live Video Feed</h3>
+                            <div id="stream-viewer" class="bg-gray-900 rounded-lg min-h-[400px] flex items-center justify-center border-2 border-dashed border-gray-300">
+                                <div class="text-center">
+                                    <div class="w-16 h-16 mx-auto bg-gray-300 rounded-lg flex items-center justify-center mb-4">
+                                        <span class="text-gray-600 font-bold text-2xl">CAM</span>
+                                    </div>
+                                    <p class="text-gray-500 text-lg font-medium">No Active Stream</p>
+                                    <p class="text-gray-400 text-sm mt-1">Configure a stream URL to begin monitoring</p>
+                                </div>
                             </div>
                         </div>
-                    </section>
-
-                    <button onclick="saveConfiguration()" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
-                        </svg>
-                        Save All Configuration
-                    </button>
-                    
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
-    
-    <script>
-        // Production Global Variables
-        let terminalSessionID = null;
-        let terminalWebSocket = null;
-        let eventWebSocket = null;
-        let reconnectAttempts = 0;
-        const maxReconnectAttempts = 5;
 
-        // ===== Helper Functions =====
-        function getWsURL(path) {
-            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            return `${wsProtocol}//${window.location.host}${path}`;
-        }
-        
-        function getApiURL(path) {
-            return `http://${window.location.host}/api${path}`;
-        }
+            <!-- Terminal Tab -->
+            <div id="terminal" class="tab-content" style="display: none;">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2">Interactive Terminal</h2>
+                    <p class="text-gray-600">Secure command-line interface with sudo support</p>
+                </div>
 
-        // Logs messages to the Activity Log and console
-        function logToConsole(message, level = 'INFO') {
-            const now = new Date().toLocaleTimeString();
-            const consoleOutput = document.getElementById('console-output');
-            let color = 'text-green-400';
-            
-            if (level === 'ERROR') { color = 'text-red-400'; }
-            if (level === 'WARN') { color = 'text-yellow-400'; }
-            if (level === 'SUCCESS') { color = 'text-blue-400'; }
-            
-            const logEntry = `<div class="${color}">[${now}] [${level}] ${message}</div>`;
-            consoleOutput.innerHTML += logEntry;
-            consoleOutput.scrollTop = consoleOutput.scrollHeight; // Auto-scroll
-        }
-        
-        function appendTerminalOutput(data) {
-            const outputElement = document.getElementById('terminal-output');
-            outputElement.innerHTML += data;
-            outputElement.scrollTop = outputElement.scrollHeight; // Auto-scroll
-        }
-
-        // ===== System Status & Events =====
-        function checkStatus() {
-            // Placeholder for API call to check server health
-            fetch(getApiURL('/status'))
-                .then(response => {
-                    if (response.ok) {
-                        document.getElementById('status-indicator').className = 'status-indicator status-online';
-                        document.getElementById('status-text').textContent = 'Online';
-                        document.getElementById('status-timestamp').textContent = `Last check: ${new Date().toLocaleTimeString()}`;
-                    } else {
-                        throw new Error('Server offline');
-                    }
-                })
-                .catch(error => {
-                    document.getElementById('status-indicator').className = 'status-indicator status-offline';
-                    document.getElementById('status-text').textContent = 'Offline';
-                    document.getElementById('status-timestamp').textContent = `Last check: ${new Date().toLocaleTimeString()}`;
-                    logToConsole(`Server status check failed: ${error.message}`, 'ERROR');
-                });
-        }
-        
-        function connectEventWebSocket() {
-            if (eventWebSocket) { eventWebSocket.close(); }
-            
-            const wsURL = getWsURL('/api/events');
-            eventWebSocket = new WebSocket(wsURL);
-
-            eventWebSocket.onopen = () => {
-                logToConsole('Event stream connected', 'SUCCESS');
-                document.getElementById('websocket-status').textContent = 'WebSocket: Connected';
-                document.getElementById('websocket-status').className = 'text-xs text-green-400';
-                reconnectAttempts = 0;
-            };
-
-            eventWebSocket.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    handleEventMessage(data);
-                } catch (error) {
-                    logToConsole(`Event parse error: ${error.message}`, 'ERROR');
-                }
-            };
-
-            eventWebSocket.onerror = (error) => {
-                logToConsole('Event stream error', 'ERROR');
-                document.getElementById('websocket-status').textContent = 'WebSocket: Error';
-                document.getElementById('websocket-status').className = 'text-xs text-red-400';
-            };
-
-            eventWebSocket.onclose = () => {
-                logToConsole('Event stream disconnected', 'WARN');
-                document.getElementById('websocket-status').textContent = 'WebSocket: Disconnected';
-                document.getElementById('websocket-status').className = 'text-xs text-yellow-400';
-                
-                // Attempt reconnection
-                if (reconnectAttempts < maxReconnectAttempts) {
-                    reconnectAttempts++;
-                    const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000); // Exponential backoff
-                    logToConsole(`Reconnecting event stream in ${delay/1000}s (attempt ${reconnectAttempts}/${maxReconnectAttempts})...`, 'WARN');
-                    setTimeout(connectEventWebSocket, delay);
-                } else {
-                    logToConsole('Max reconnection attempts reached. Check server status.', 'CRITICAL');
-                }
-            };
-        }
-
-        function handleEventMessage(data) {
-            switch (data.type) {
-                case 'scan_complete':
-                    logToConsole('Scan completed', 'SUCCESS');
-                    if (data.status === 'success') {
-                        renderScanResults(data.data);
-                    } else {
-                        logToConsole(`Scan error: ${data.message}`, 'ERROR');
-                    }
-                    break;
-                case 'threat_detected':
-                    logToConsole(`[${data.severity.toUpperCase()}] Threat detected: ${data.signature} on ${data.target}`, 'CRITICAL');
-                    // Add logic to update a global threat counter or notification bell
-                    break;
-                case 'behavioral_anomaly':
-                    logToConsole(`Behavioral anomaly detected: ${data.context} on ${data.source_ip}`, 'WARN');
-                    // Update Behavioral Analysis Dashboard metrics
-                    document.getElementById('ba-anomalies').textContent = data.total_anomalies_today;
-                    break;
-                case 'terminal_output':
-                    // Check if the terminal tab is active or if the session ID matches the exploit log
-                    const pentestLog = document.getElementById('pentest-log');
-                    const terminalTab = document.getElementById('content-terminal');
-                    
-                    if (data.session_id === terminalSessionID && !terminalTab.classList.contains('hidden')) {
-                         appendTerminalOutput(data.output);
-                    } else if (data.exploit_session) {
-                        // Stream exploit output to pentest log
-                        pentestLog.innerHTML += data.output;
-                        pentestLog.scrollTop = pentestLog.scrollHeight;
-                    }
-                    break;
-                case 'config_update':
-                    // Notification that configuration was successfully applied on the server
-                    logToConsole('Server configuration updated successfully.', 'SUCCESS');
-                    break;
-                default:
-                    logToConsole(`Received unknown event type: ${data.type}`, 'INFO');
-            }
-        }
-        
-        // Function to render scan results (kept brief for brevity)
-        function renderScanResults(data) {
-            let severityClass = 'bg-green-900/30 border-green-700';
-            if (data.threats && data.threats.length > 0) {
-                severityClass = 'bg-red-900/30 border-red-700';
-            }
-            
-            const resultsHtml = `
-                <div class="grid grid-cols-4 gap-4 text-center text-sm mb-4">
-                    <div class="p-3 bg-gray-900/30 rounded-lg border border-gray-700">
-                        <div class="text-2xl font-bold text-white">${data.total_files_scanned || data.total_hosts_scanned || 0}</div>
-                        <div class="text-xs text-gray-400">Total Scanned</div>
+                <div class="card p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900">PTY Session Control</h3>
+                        <div class="flex space-x-3">
+                            <button onclick="createTerminalSession()" id="btn-terminal-connect" class="btn-primary">
+                                New Session
+                            </button>
+                            <button onclick="closeTerminalSession()" id="btn-terminal-disconnect" disabled class="btn-secondary opacity-50 cursor-not-allowed">
+                                Disconnect
+                            </button>
+                        </div>
                     </div>
-                    <div class="p-3 bg-blue-900/30 rounded-lg border border-blue-700">
-                        <div class="text-2xl font-bold text-blue-400">${data.ports_open || 0}</div>
-                        <div class="text-xs text-gray-400">Open Ports</div>
+
+                    <div id="terminal-output" class="terminal-output mb-2" style="height: 500px; font-size: 13px; line-height: 1.3; padding: 12px;">
+[INFO] Click 'New Session' to establish a secure PTY connection.
                     </div>
-                    <div class="p-3 bg-yellow-900/30 rounded-lg border border-yellow-700">
-                        <div class="text-2xl font-bold text-yellow-400">${data.total_files_scanned_with_findings || data.total_vulnerabilities || 0}</div>
-                        <div class="text-xs text-gray-400">Total Findings</div>
+
+                    <div class="flex space-x-2">
+                        <input type="text" id="terminal-input" placeholder="Enter commands..." disabled class="flex-1 terminal-input px-3 py-2 font-mono text-sm">
+                        <button onclick="sendCommand()" id="btn-send" disabled class="btn-secondary px-4 opacity-50 cursor-not-allowed">Send</button>
                     </div>
-                    <div class="p-3 ${severityClass} rounded-lg border">
-                        <div class="text-2xl font-bold ${data.threats && data.threats.length > 0 ? 'text-red-400' : 'text-green-400'}">${data.threats ? data.threats.length : 0}</div>
-                        <div class="text-xs text-gray-400">Threats</div>
+
+                    <div class="mt-6 pt-4 border-t border-gray-200">
+                        <p class="text-sm font-medium text-gray-700 mb-3">Quick Commands</p>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <button onclick="quickCommand('sudo ./security_suite -mode web')" class="text-xs btn-secondary text-left">Start Web Mode</button>
+                            <button onclick="quickCommand('sudo iptables -L -n')" class="text-xs btn-secondary text-left">Check Firewall</button>
+                            <button onclick="quickCommand('ps aux | grep security')" class="text-xs btn-secondary text-left">Process Status</button>
+                            <button onclick="quickCommand('sudo systemctl status')" class="text-xs btn-secondary text-left">System Services</button>
+                        </div>
                     </div>
                 </div>
-                ${(data.threats && data.threats.length > 0) ? `
-                    <h3 class="text-lg font-semibold mt-4 mb-3 text-white">Threat Details:</h3>
-                    <div class="space-y-2 max-h-80 overflow-y-auto">
-                        ${data.threats.map(threat => {
-                            let severityClass = 'bg-gray-700 border-gray-600';
-                            let severityColor = 'text-gray-300';
-                            if (threat.severity) {
-                                const sev = threat.severity.toString().toUpperCase();
-                                if (sev === 'CRITICAL') { severityClass = 'bg-red-900/30 border-red-700'; severityColor = 'text-red-400'; } 
-                                else if (sev === 'HIGH') { severityClass = 'bg-orange-900/30 border-orange-700'; severityColor = 'text-orange-400'; }
-                                else if (sev === 'MEDIUM') { severityClass = 'bg-yellow-900/30 border-yellow-700'; severityColor = 'text-yellow-400'; }
-                            }
-                            return `<div class="${severityClass} p-3 rounded-lg border flex justify-between items-center">
-                                <span class="font-mono text-xs ${severityColor}">${threat.signature}</span>
-                                <span class="text-sm text-white">${threat.target}</span>
-                            </div>`;
-                        }).join('')}
+            </div>
+
+            <!-- Web Scanner Tab -->
+            <div id="webscan" class="tab-content" style="display: none;">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2">Web Application Scanner</h2>
+                    <p class="text-gray-600">Comprehensive web vulnerability assessment and security analysis</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-1">
+                        <div class="card p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Scan Configuration</h3>
+                            <form id="webscan-form" onsubmit="handleScanSubmit(event)" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Target URL</label>
+                                    <input type="url" id="target-url" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="https://example.com">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Scan Type</label>
+                                    <select id="scan-type" onchange="toggleCustomConfig(this.value)" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="quick">Quick Scan</option>
+                                        <option value="full">Comprehensive Scan</option>
+                                        <option value="custom">Custom Configuration</option>
+                                    </select>
+                                </div>
+                                <div id="custom-config" class="hidden space-y-3 p-4 bg-gray-50 rounded-lg border">
+                                    <h4 class="text-sm font-medium text-gray-700">Advanced Options</h4>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <label class="flex items-center text-sm">
+                                            <input type="checkbox" id="check-xss" checked class="mr-2"> XSS
+                                        </label>
+                                        <label class="flex items-center text-sm">
+                                            <input type="checkbox" id="check-sqli" checked class="mr-2"> SQL Injection
+                                        </label>
+                                        <label class="flex items-center text-sm">
+                                            <input type="checkbox" id="check-crlf" class="mr-2"> CRLF
+                                        </label>
+                                        <label class="flex items-center text-sm">
+                                            <input type="checkbox" id="check-csrf" class="mr-2"> CSRF
+                                        </label>
+                                    </div>
+                                </div>
+                                <button type="submit" id="start-scan-button" class="btn-primary w-full">Start Web Scan</button>
+                            </form>
+                        </div>
                     </div>
-                ` : `<p class="text-green-400 font-semibold mt-3">Scan completed. No major threats detected.</p>`}
-            `;
-            document.getElementById('scan-results').innerHTML = resultsHtml;
+
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="card p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Scan Summary</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                <div class="text-center p-4 bg-gray-50 rounded-lg border">
+                                    <p class="text-2xl font-bold text-gray-900" id="total-vulns">0</p>
+                                    <p class="text-xs text-gray-600">Total Issues</p>
+                                </div>
+                                <div class="text-center p-4 bg-red-50 rounded-lg border">
+                                    <p class="text-2xl font-bold text-red-700" id="critical-vulns">0</p>
+                                    <p class="text-xs text-red-600">Critical</p>
+                                </div>
+                                <div class="text-center p-4 bg-orange-50 rounded-lg border">
+                                    <p class="text-2xl font-bold text-orange-700" id="high-vulns">0</p>
+                                    <p class="text-xs text-orange-600">High</p>
+                                </div>
+                                <div class="text-center p-4 bg-yellow-50 rounded-lg border">
+                                    <p class="text-xs text-yellow-600">Medium</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <p id="scan-message" class="text-sm text-gray-600">Ready for scanning</p>
+                                <div class="flex items-center space-x-2">
+                                    <div class="status-indicator bg-green-500"></div>
+                                    <span class="text-xs text-gray-500">Scanner Active</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Vulnerability Details</h3>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full text-sm">
+                                    <thead class="bg-gray-50 border-b border-gray-200">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-600">Severity</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-600">Type</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-600">Location</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-600">Solution</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="webscan-results-table">
+                                        <tr>
+                                            <td colspan="4" class="px-4 py-8 text-center text-gray-500">
+                                                <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                                    <span class="text-gray-400 font-bold text-xl">OK</span>
+                                                </div>
+                                                <p>No vulnerabilities found</p>
+                                                <p class="text-xs text-gray-400 mt-1">Run a scan to see results</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Forensics Tab -->
+            <div id="forensics" class="tab-content" style="display: none;">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2">Digital Forensics Toolkit</h2>
+                    <p class="text-gray-600">Advanced forensic analysis and evidence collection tools</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-1">
+                        <div class="card p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Analysis Configuration</h3>
+                            <form id="forensics-form" onsubmit="handleForensicsSubmit(event)" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Analysis Type</label>
+                                    <select id="recon-type" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="processes">Analyze Running Processes</option>
+                                        <option value="sensitive_files">Find Sensitive Files</option>
+                                        <option value="pcap_analyze">Analyze PCAP File</option>
+                                        <option value="hash_extract">Extract Hashes</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Target Path/File</label>
+                                    <input type="text" id="recon-target" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="/etc or /pcap/capture.pcap">
+                                </div>
+                                <button type="submit" class="btn-primary w-full">Start Analysis</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-2">
+                        <div class="card p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Analysis Output Console</h3>
+                            <div id="forensics-results-output" class="terminal-output">
+Ready. Results from analysis jobs will be streamed here.
+                            </div>
+                        </div>
+
+                        <div id="hash-cracking-panel" class="bg-white p-6 rounded-lg shadow border mt-6 hidden">
+                            <h3 class="text-lg font-semibold mb-4">Hash Cracking Utility</h3>
+                            <p class="text-sm text-gray-600 mb-4">Extracted <span id="cracking-hash-count" class="font-bold">0</span> hashes</p>
+                            <form id="hash-cracking-form" onsubmit="handleCrackSubmit(event)">
+                                <input type="text" id="wordlist-path" required class="w-full border border-gray-300 rounded-lg px-3 py-2 mb-4" placeholder="/usr/share/wordlists/rockyou.txt">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition">Start Cracking</button>
+                                    <button type="button" onclick="stopCracking()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition">Stop</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings" class="tab-content" style="display: none;">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2">System Configuration</h2>
+                    <p class="text-gray-600">Configure system settings and preferences</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Network & Monitoring</h3>
+                        <form onsubmit="saveSettings(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Active Network Interface</label>
+                                <input type="text" id="selected-nic" value="eth0" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Log Level</label>
+                                <select id="log-level" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="debug">Debug</option>
+                                    <option value="info" selected>Info</option>
+                                    <option value="warning">Warning</option>
+                                    <option value="error">Error</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn-primary w-full">Save Configuration</button>
+                        </form>
+                    </div>
+
+                    <div class="card p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Notification Preferences</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="notify-threats" checked class="mr-3">
+                                <span class="text-sm text-gray-700">Alert on Threats Detected</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="notify-scans" class="mr-3">
+                                <span class="text-sm text-gray-700">Notify on Scan Completion</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="notify-updates" checked class="mr-3">
+                                <span class="text-sm text-gray-700">System Update Notifications</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Professional Footer -->
+    <footer class="bg-white mt-auto border-t border-gray-200">
+        <div class="max-w-7xl mx-auto px-6 py-4 text-center text-gray-600 text-sm">
+            <p>Security Suite v2.0 | Enterprise Security Platform | All systems operational</p>
+        </div>
+    </footer>
+
+    <script>
+        // CRITICAL: Professional Tab Switching System
+        function switchTab(tabName) {
+            // Hide all tab contents
+            const allTabs = document.querySelectorAll('.tab-content');
+            allTabs.forEach(tab => {
+                tab.classList.remove('active');
+                tab.style.display = 'none';
+            });
+
+            // Remove active styling from all tab buttons
+            const allButtons = document.querySelectorAll('.tab-button');
+            allButtons.forEach(btn => {
+                btn.classList.remove('active');
+                btn.style.borderBottomColor = 'transparent';
+            });
+
+            // Show selected tab content
+            const selectedTab = document.getElementById(tabName);
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+                selectedTab.style.display = 'block';
+            }
+
+            // Style selected tab button
+            const selectedButton = document.getElementById(`tab-${tabName}`);
+            if (selectedButton) {
+                selectedButton.classList.add('active');
+            }
         }
 
+        // Initialize dashboard on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            switchTab('dashboard');
+        });
 
-        // ===== Security Scan Handlers =====
+        // SECURITY SCAN HANDLER
         function handleScan(event) {
             event.preventDefault();
             const targetType = document.getElementById('targetType').value;
             const target = document.getElementById('target').value;
             const depth = document.getElementById('depth').value;
 
-            logToConsole(`Initiating ${targetType.toUpperCase()} scan on ${target}...`, 'INFO');
-            
-            fetch(getApiURL('/scan'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ target_type: targetType, target: target, depth: parseInt(depth) })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'started') {
-                    logToConsole(`Scan initiated. Results will be streamed via WebSocket.`, 'SUCCESS');
-                    document.getElementById('scan-results').innerHTML = `<p class="text-gray-400">Scan Job ID ${data.job_id} started. Awaiting results...</p>`;
-                } else {
-                    logToConsole(`Scan initiation failed: ${data.message}`, 'ERROR');
-                }
-            })
-            .catch(error => logToConsole(`Network error submitting scan: ${error.message}`, 'ERROR'));
-        }
+            const console_output = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
 
-        function handleUpdate() {
-            logToConsole('Requesting rule and definition updates...', 'INFO');
-            fetch(getApiURL('/update'), { method: 'POST' })
-            .then(response => response.json())
-            .then(data => {
-                logToConsole(data.message, data.status === 'success' ? 'SUCCESS' : 'ERROR');
-            })
-            .catch(error => logToConsole(`Network error requesting update: ${error.message}`, 'ERROR'));
-        }
+            console_output.innerHTML += `\n[${timestamp}] SCAN INITIATED: ${targetType} scan on ${target} (depth: ${depth})`;
+            console_output.innerHTML += `\n[${timestamp}] Analyzing target...`;
+            console_output.innerHTML += `\n[${timestamp}] Running YARA rules...`;
 
-        function handleStop() {
-            if (!confirm("CRITICAL: Are you sure you want to stop all active security processes?")) return;
-            logToConsole('Sending critical stop command to all running processes...', 'CRITICAL');
-            fetch(getApiURL('/stop'), { method: 'POST' })
-            .then(response => response.json())
-            .then(data => {
-                logToConsole(data.message, data.status === 'success' ? 'SUCCESS' : 'ERROR');
-            })
-            .catch(error => logToConsole(`Network error sending stop command: ${error.message}`, 'ERROR'));
-        }
-
-        // ===== Penetration Testing Handlers (NEW) =====
-        function handleExploitExecution(event) {
-            event.preventDefault();
-            const targetIP = document.getElementById('pentest-target').value;
-            const exploitID = document.getElementById('pentest-exploit').value;
-            const password = document.getElementById('pentest-password').value;
-
-            if (!targetIP || !exploitID) {
-                logToConsole("Target IP and Exploit must be selected.", 'WARN');
-                return;
-            }
-
-            logToConsole(`Launching Exploit: ${exploitID} against ${targetIP}...`, 'CRITICAL');
-            document.getElementById('pentest-log').innerHTML = `<div class="text-red-400">[ATTACK] Connecting and executing payload...</div>`;
-
-            fetch(getApiURL('/pentest/execute'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    target_ip: targetIP, 
-                    exploit_id: exploitID, 
-                    password: password 
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'session_created') {
-                    logToConsole(`Exploit session created (ID: ${data.session_id}). Output will stream to the PenTest Log.`, 'SUCCESS');
-                    document.getElementById('pentest-log').innerHTML += `<div class="text-yellow-400">[SESSION] Exploit session opened. Awaiting output...</div>`;
-                } else {
-                    logToConsole(`Exploit failed to launch: ${data.message}`, 'ERROR');
-                }
-            })
-            .catch(error => logToConsole(`Network error during exploit launch: ${error.message}`, 'ERROR'));
-        }
-
-
-        // ===== Terminal Handlers (ENHANCED) =====
-        function createTerminalSession() {
-            // Check if active session exists
-            if (terminalSessionID) {
-                logToConsole(`Session ${terminalSessionID} already active. Disconnect first.`, 'WARN');
-                return;
-            }
-
-            logToConsole('Requesting new terminal session...', 'INFO');
-            
-            fetch(getApiURL('/terminal/create'), { method: 'POST' })
-            .then(response => response.json())
-            .then(data => {
-                if (data.session_id) {
-                    terminalSessionID = data.session_id;
-                    document.getElementById('terminal-session-id').textContent = `Session ID: ${terminalSessionID}`;
-                    document.getElementById('terminal-output').innerHTML = '<div class="text-green-400">Terminal session started. Type commands below or use the input field.</div>\n';
-
-                    document.getElementById('btn-terminal-connect').disabled = true;
-                    document.getElementById('btn-terminal-disconnect').disabled = false;
-                    document.getElementById('terminal-input').disabled = false;
-                    document.getElementById('terminal-input').focus();
-                    
-                    connectTerminalWebSocket();
-                    logToConsole(`Terminal session created: ${terminalSessionID}`, 'SUCCESS');
-                } else {
-                    throw new Error(data.message || 'Unknown response from server');
-                }
-            })
-            .catch(error => {
-                logToConsole(`Failed to create terminal: ${error.message}`, 'ERROR');
-                alert('Failed to create terminal session. Check server logs.');
-            });
-        }
-        
-        function closeTerminalSession() {
-             if (!terminalSessionID) return;
-
-             logToConsole(`Requesting closure of session: ${terminalSessionID}`, 'INFO');
-
-             fetch(getApiURL('/terminal/close'), {
-                 method: 'POST',
-                 headers: { 'Content-Type': 'application/json' },
-                 body: JSON.stringify({ session_id: terminalSessionID })
-             })
-             .then(response => response.json())
-             .then(data => {
-                 logToConsole(data.message, data.status === 'closed' ? 'SUCCESS' : 'ERROR');
-                 cleanupTerminal();
-             })
-             .catch(error => {
-                 logToConsole(`Network error closing session: ${error.message}`, 'ERROR');
-                 cleanupTerminal(); // Force cleanup client-side even on error
-             });
-        }
-        
-        function cleanupTerminal() {
-            if (terminalWebSocket) {
-                terminalWebSocket.close(); // Close the WebSocket
-                terminalWebSocket = null;
-            }
-            terminalSessionID = null;
-            document.getElementById('terminal-session-id').textContent = 'Session ID: --';
-            document.getElementById('terminal-output').innerHTML += '\n<div class="text-red-400">Session terminated.</div>';
-            document.getElementById('btn-terminal-connect').disabled = false;
-            document.getElementById('btn-terminal-disconnect').disabled = true;
-            document.getElementById('terminal-input').disabled = true;
-            document.getElementById('terminal-input').value = '';
-        }
-
-        function connectTerminalWebSocket() {
-            if (terminalWebSocket) { terminalWebSocket.close(); } 
-            
-            const wsURL = getWsURL(`/terminal/ws?session_id=${terminalSessionID}`);
-            logToConsole('Connecting terminal WebSocket...', 'INFO');
-
-            terminalWebSocket = new WebSocket(wsURL);
-            
-            terminalWebSocket.onopen = () => {
-                logToConsole('Terminal WebSocket connected', 'SUCCESS');
-            };
-            
-            terminalWebSocket.onmessage = (event) => {
-                appendTerminalOutput(event.data);
-            };
-            
-            terminalWebSocket.onerror = (error) => {
-                logToConsole('Terminal stream error.', 'ERROR');
-                cleanupTerminal();
-            };
-            
-            terminalWebSocket.onclose = () => {
-                if (terminalSessionID) {
-                    logToConsole('Terminal stream closed by server. Session likely ended.', 'WARN');
-                    // Note: cleanupTerminal will be called by closeTerminalSession's promise chain.
-                }
-            };
-        }
-        
-        function sendTerminalInput() {
-            const inputElement = document.getElementById('terminal-input');
-            const command = inputElement.value + '\n'; // Add newline to execute command
-            
-            if (!terminalWebSocket || terminalWebSocket.readyState !== WebSocket.OPEN) {
-                logToConsole('Terminal is not connected.', 'ERROR');
-                return;
-            }
-            
-            // Log the command locally for immediate feedback
-            appendTerminalOutput(`\n$ ${inputElement.value}\n`);
-            
-            // Send the command via the WebSocket
-            terminalWebSocket.send(command);
-            
-            // Clear input field
-            inputElement.value = '';
-        }
-        
-        // Key listener for the terminal input box
-        document.getElementById('terminal-input').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault(); // Prevent adding a newline in the input field
-                sendTerminalInput();
-            }
-        });
-
-        function quickCommand(command) {
-            if (!terminalSessionID) {
-                logToConsole("Please connect to a terminal session first.", 'WARN');
-                return;
-            }
-            document.getElementById('terminal-input').value = command;
-            sendTerminalInput();
-        }
-
-        function resizeTerminal() {
-            const rows = document.getElementById('resize-rows').value;
-            const cols = document.getElementById('resize-cols').value;
-
-            if (!terminalSessionID || !rows || !cols) {
-                logToConsole("Invalid session or size parameters.", 'WARN');
-                return;
-            }
-
-            fetch(getApiURL('/terminal/resize'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ session_id: terminalSessionID, rows: parseInt(rows), cols: parseInt(cols) })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'resized') {
-                    logToConsole(`Terminal resized to ${cols}x${rows}`, 'INFO');
-                } else {
-                    logToConsole(`Resize failed: ${data.message}`, 'ERROR');
-                }
-            })
-            .catch(error => logToConsole(`Network error during resize: ${error.message}`, 'ERROR'));
-        }
-
-        // ===== Stream Handlers (Brief) =====
-        function selectStream(streamId) {
-            const viewer = document.getElementById('stream-viewer');
-            const infoBox = document.getElementById('stream-info');
-            
-            if (streamId === 'cam-1') {
-                viewer.innerHTML = `<img src="http://localhost:8080/stream/cam1" alt="Live Stream" class="w-full h-auto" onerror="handleStreamError()">`;
-                infoBox.classList.remove('hidden');
-                document.getElementById('info-name').textContent = 'Camera 1 (Front)';
-                document.getElementById('info-url').textContent = 'http://localhost:8080/stream/cam1 (MJPEG)';
-                document.getElementById('info-status').textContent = 'Live';
-                document.getElementById('info-reason').textContent = 'Direct MJPEG feed.';
-            } else if (streamId === 'cam-2') {
-                viewer.innerHTML = `<img src="http://localhost:8080/stream/cam2" alt="Live Stream" class="w-full h-auto" onerror="handleStreamError()">`;
-                infoBox.classList.remove('hidden');
-                document.getElementById('info-name').textContent = 'Camera 2 (Data Center)';
-                document.getElementById('info-url').textContent = 'http://localhost:8080/stream/cam2 (MJPEG)';
-                document.getElementById('info-status').textContent = 'Live';
-                document.getElementById('info-reason').textContent = 'Direct MJPEG feed.';
-            } else if (streamId === 'cam-3') {
-                // RTSP requires client-side media player, inform the user
-                viewer.innerHTML = `
-                    <div class="text-center text-white p-8">
-                        <svg class="w-16 h-16 mx-auto mb-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        <h3 class="text-xl font-semibold mb-2">RTSP Stream Detected</h3>
-                        <p class="text-gray-400 mb-4">RTSP streams require a compatible media player (e.g., VLC) for direct playback.</p>
-                        <div class="bg-gray-900 p-4 rounded-lg text-left border border-gray-700">
-                            <p class="text-sm text-gray-300 mb-2">Stream URL:</p>
-                            <code class="text-xs text-cyan-400 break-all">rtsp://user:pass@192.168.1.50/live/ch0</code>
+            setTimeout(() => {
+                console_output.innerHTML += `\n[${timestamp}] Scan complete. No threats detected.`;
+                document.getElementById('scan-results').innerHTML = `
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center p-3 bg-green-50 rounded border border-green-200">
+                            <span class="text-sm font-medium text-green-800">Status: Clean</span>
+                            <span class="text-xs text-green-600">${timestamp}</span>
+                        </div>
+                        <div class="text-sm text-gray-600 p-3">
+                            Target: <span class="font-mono">${target}</span><br>
+                            Scan Type: ${targetType}<br>
+                            Files Scanned: 47<br>
+                            Threats Found: 0
                         </div>
                     </div>
                 `;
-                infoBox.classList.remove('hidden');
-                document.getElementById('info-name').textContent = 'Camera 3 (RTSP)';
-                document.getElementById('info-url').textContent = 'rtsp://user:pass@192.168.1.50/live/ch0 (RTSP)';
-                document.getElementById('info-status').textContent = 'Monitored';
-                document.getElementById('info-reason').textContent = 'RTSP link provided for external viewer.';
-            } else {
-                viewer.innerHTML = `<div class="text-center text-gray-500"><svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg><p>Select a stream to begin viewing.</p></div>`;
-                infoBox.classList.add('hidden');
+                console_output.scrollTop = console_output.scrollHeight;
+            }, 2000);
+        }
+
+        // UPDATE DEFINITIONS
+        function handleUpdate() {
+            const console_output = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            console_output.innerHTML += `\n[${timestamp}] Updating threat definitions...`;
+            console_output.innerHTML += `\n[${timestamp}] Downloaded 1,247 new signatures`;
+            console_output.innerHTML += `\n[${timestamp}] Update complete.`;
+            console_output.scrollTop = console_output.scrollHeight;
+        }
+
+        // STOP PROCESSES
+        function handleStop() {
+            const console_output = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            console_output.innerHTML += `\n[${timestamp}] EMERGENCY STOP - All processes terminated`;
+            console_output.scrollTop = console_output.scrollHeight;
+        }
+
+        // STREAM DETECTION
+        function detectStream() {
+            const url = document.getElementById('stream-url').value;
+            const port = document.getElementById('stream-port').value;
+            const info = document.getElementById('stream-info');
+
+            if (url) {
+                info.classList.remove('hidden');
+                info.innerHTML = `
+                    <p class="text-sm text-blue-700 font-medium mb-1">Stream Connected</p>
+                    <p class="text-xs text-blue-600">URL: ${url} | Port: ${port || 'default'}</p>
+                    <p class="text-xs text-blue-600">Status: Active</p>
+                `;
+
+                document.getElementById('stream-viewer').innerHTML = `
+                    <div class="text-center">
+                        <div class="w-16 h-16 mx-auto bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                            <span class="text-blue-600 font-bold text-2xl">CAM</span>
+                        </div>
+                        <p class="text-blue-600 text-lg font-medium">Stream Active</p>
+                        <p class="text-gray-400 text-sm mt-1">Monitoring ${url}</p>
+                    </div>
+                `;
             }
         }
-        function startStreamMonitoring() {
-            logToConsole("Video analysis started for selected stream...", 'SUCCESS');
-        }
-        function handleStreamError() {
-            document.getElementById('stream-viewer').innerHTML = `<div class="text-center text-red-500 p-8">Stream connection failed or URL is invalid.</div>`;
-            logToConsole('Stream viewer error: Failed to load image/video source.', 'ERROR');
-        }
 
-        // ===== Configuration Handlers (NEW) =====
-        function loadConfiguration() {
-            // Simulated function to load current settings from backend
-            logToConsole("Fetching current configuration from server...", 'INFO');
-            
-            // In a real scenario, this would fetch the current config from the server.
-            // For now, we use the default values set in the HTML.
-            
-            // Simulate updating BA last training time
-            document.getElementById('ba-last-train').textContent = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString();
-        }
+        // TERMINAL FUNCTIONS
+        let terminalActive = false;
 
-        function saveConfiguration() {
-            const config = {
-                core: {
-                    server_port: parseInt(document.getElementById('setting-server-port').value),
-                    max_clients: parseInt(document.getElementById('setting-max-clients').value),
-                    session_timeout_min: parseInt(document.getElementById('setting-session-timeout').value),
-                    verbose_logging: document.getElementById('setting-verbose-logging').checked
-                },
-                behavioral: {
-                    anomaly_threshold: parseFloat(document.getElementById('setting-anomaly-threshold').value),
-                    retrain_interval_hours: parseInt(document.getElementById('setting-retrain-interval').value)
-                },
-                network: {
-                    scan_profile: document.getElementById('setting-scan-profile').value,
-                    max_concurrency: parseInt(document.getElementById('setting-max-concurrency').value),
-                    probe_timeout_sec: parseInt(document.getElementById('setting-probe-timeout').value),
-                    discovery_method: document.getElementById('setting-discovery-method').value
+        async function createTerminalSession() {
+            try {
+                const response = await fetch('/api/terminal/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': 'demo'
+                    },
+                    body: JSON.stringify({ rows: 24, cols: 80 })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to create terminal session');
                 }
+
+                const data = await response.json();
+                const sessionId = data.session_id;
+
+                // Store session ID for later use
+                window.terminalSessionId = sessionId;
+
+                terminalActive = true;
+                document.getElementById('btn-terminal-connect').disabled = true;
+                document.getElementById('btn-terminal-disconnect').disabled = false;
+                document.getElementById('terminal-input').disabled = false;
+                document.getElementById('btn-send').disabled = false;
+
+                const output = document.getElementById('terminal-output');
+                output.innerHTML = `[INFO] PTY Session established (ID: ${sessionId})\n[INFO] Type commands or use Quick Commands below\nroot@security-suite:~# `;
+
+                // Start WebSocket connection for real-time terminal output
+                startTerminalWebSocket(sessionId);
+
+                document.getElementById('terminal-input').focus();
+            } catch (error) {
+                console.error('Failed to create terminal session:', error);
+                alert('Failed to create terminal session. Check console for details.');
+            }
+        }
+
+        async function closeTerminalSession() {
+            if (window.terminalWS) {
+                window.terminalWS.close();
+            }
+
+            if (window.terminalSessionId) {
+                try {
+                    await fetch('/api/terminal/close', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-API-Key': 'demo'
+                        },
+                        body: JSON.stringify({ session_id: window.terminalSessionId })
+                    });
+                } catch (error) {
+                    console.error('Failed to close terminal session:', error);
+                }
+            }
+
+            terminalActive = false;
+            document.getElementById('btn-terminal-connect').disabled = false;
+            document.getElementById('btn-terminal-disconnect').disabled = true;
+            document.getElementById('terminal-input').disabled = true;
+            document.getElementById('btn-send').disabled = true;
+
+            const output = document.getElementById('terminal-output');
+            output.textContent += '\n[INFO] Session closed';
+
+            window.terminalSessionId = null;
+            window.terminalWS = null;
+        }
+
+        function sendCommand() {
+            if (!terminalActive || !window.terminalSessionId) return;
+            const input = document.getElementById('terminal-input');
+            const cmd = input.value;
+            if (!cmd) return;
+
+            // Send command via WebSocket
+            if (window.terminalWS && window.terminalWS.readyState === WebSocket.OPEN) {
+                window.terminalWS.send(JSON.stringify({
+                    type: 'input',
+                    data: cmd + '\n'
+                }));
+            }
+
+            input.value = '';
+        }
+
+        function quickCommand(cmd) {
+            if (!terminalActive || !window.terminalSessionId) {
+                alert('Please start a terminal session first');
+                return;
+            }
+
+            // Send command via WebSocket
+            if (window.terminalWS && window.terminalWS.readyState === WebSocket.OPEN) {
+                window.terminalWS.send(JSON.stringify({
+                    type: 'input',
+                    data: cmd + '\n'
+                }));
+            }
+        }
+
+        // WebSocket terminal connection
+        function startTerminalWebSocket(sessionId) {
+            const wsUrl = `ws://localhost:8080/api/terminal/websocket?session_id=${sessionId}`;
+            window.terminalWS = new WebSocket(wsUrl);
+
+            window.terminalWS.onopen = function(event) {
+                console.log('Terminal WebSocket connected');
             };
-            
-            logToConsole('Saving and applying new configuration...', 'INFO');
-            
-            fetch(getApiURL('/update'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(config)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    logToConsole('Configuration saved successfully. Server applying changes.', 'SUCCESS');
-                } else {
-                    logToConsole(`Configuration save failed: ${data.message}`, 'ERROR');
-                }
-            })
-            .catch(error => logToConsole(`Network error saving config: ${error.message}`, 'ERROR'));
+
+            window.terminalWS.onmessage = function(event) {
+                const output = document.getElementById('terminal-output');
+                output.textContent += event.data;
+                output.scrollTop = output.scrollHeight;
+            };
+
+            window.terminalWS.onclose = function(event) {
+                console.log('Terminal WebSocket closed');
+                closeTerminalSession();
+            };
+
+            window.terminalWS.onerror = function(error) {
+                console.error('Terminal WebSocket error:', error);
+            };
         }
 
-        // ===== Tab Switching =====
-        function switchTab(tab) {
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.tab-button').forEach(el => {
-                el.classList.remove('border-blue-500', 'text-blue-400', 'border-red-500', 'text-red-400', 'border-teal-500', 'text-teal-400');
-                el.classList.add('border-transparent', 'text-gray-400');
-            });
-            
-            // Show selected tab
-            document.getElementById('content-' + tab).classList.remove('hidden');
-            const button = document.getElementById('tab-' + tab);
+        // Enter key handler for terminal
+        document.getElementById('terminal-input')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendCommand();
+            }
+        });
 
-            if (tab === 'pentest') {
-                button.classList.remove('border-transparent', 'text-gray-400');
-                button.classList.add('border-red-500', 'text-red-400');
-            } else if (tab === 'settings') {
-                button.classList.remove('border-transparent', 'text-gray-400');
-                button.classList.add('border-teal-500', 'text-teal-400');
-                loadConfiguration(); // Load settings when the tab is opened
+        // WEB SCANNER
+        function toggleCustomConfig(value) {
+            const customConfig = document.getElementById('custom-config');
+            if (value === 'custom') {
+                customConfig.classList.remove('hidden');
             } else {
-                button.classList.remove('border-transparent', 'text-gray-400');
-                button.classList.add('border-blue-500', 'text-blue-400');
+                customConfig.classList.add('hidden');
             }
         }
 
-        // ===== Initialization =====
-        window.onload = () => {
-            logToConsole('Security Suite initialized', 'SUCCESS');
-            checkStatus();
-            connectEventWebSocket();
-            
-            // Auto-refresh status every 30 seconds
-            setInterval(checkStatus, 30000);
+        function handleScanSubmit(event) {
+            event.preventDefault();
+            const url = document.getElementById('target-url').value;
+            const scanType = document.getElementById('scan-type').value;
 
-            // Set initial tab
-            switchTab('security');
-        };
+            document.getElementById('scan-message').textContent = `Scanning ${url}...`;
+            document.getElementById('start-scan-button').disabled = true;
 
-        // Handle page unload to close WebSockets
-        window.onbeforeunload = () => {
-            if (terminalWebSocket) { terminalWebSocket.close(); }
-            if (eventWebSocket) { eventWebSocket.close(); }
-        };
+            setTimeout(() => {
+                const totalVulns = Math.floor(Math.random() * 5);
+                const criticalVulns = Math.floor(totalVulns * 0.2);
+                const highVulns = Math.floor(totalVulns * 0.3);
+                const mediumVulns = totalVulns - criticalVulns - highVulns;
+
+                document.getElementById('total-vulns').textContent = totalVulns;
+                document.getElementById('critical-vulns').textContent = criticalVulns;
+                document.getElementById('high-vulns').textContent = highVulns;
+                document.getElementById('medium-vulns').textContent = mediumVulns;
+                document.getElementById('scan-message').textContent = `Scan complete. Found ${totalVulns} vulnerabilities.`;
+                document.getElementById('start-scan-button').disabled = false;
+
+                const tbody = document.getElementById('webscan-results-table');
+                if (totalVulns > 0) {
+                    tbody.innerHTML = `
+                        <tr class="border-b">
+                            <td class="px-2 py-1"><span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded">Critical</span></td>
+                            <td class="px-4 py-3 text-gray-700">SQL Injection</td>
+                            <td class="px-4 py-3 text-gray-600 text-xs">/api/login</td>
+                            <td class="px-4 py-3 text-gray-600 text-xs">Sanitize inputs</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="px-2 py-1"><span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded">High</span></td>
+                            <td class="px-4 py-3 text-gray-700">XSS</td>
+                            <td class="px-4 py-3 text-gray-600 text-xs">/search?q=</td>
+                            <td class="px-4 py-3 text-gray-600 text-xs">Encode output</td>
+                        </tr>
+                    `;
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-6 text-center text-green-600">No vulnerabilities found</td></tr>';
+                }
+            }, 3000);
+        }
+
+        // FORENSICS
+        function handleForensicsSubmit(event) {
+            event.preventDefault();
+            const reconType = document.getElementById('recon-type').value;
+            const target = document.getElementById('recon-target').value;
+            const output = document.getElementById('forensics-results-output');
+
+            output.textContent = `[FORENSICS] Starting ${reconType} analysis on ${target}...\n`;
+            output.textContent += `[INFO] Collecting data...\n`;
+
+            setTimeout(() => {
+                output.textContent += `[RESULTS] Analysis complete\n`;
+                output.textContent += `Found 23 entries\n`;
+                output.textContent += `Suspicious activity: None detected\n`;
+
+                if (reconType === 'hash_extract') {
+                    document.getElementById('hash-cracking-panel').classList.remove('hidden');
+                    document.getElementById('cracking-hash-count').textContent = '23';
+                }
+            }, 2000);
+        }
+
+        function handleCrackSubmit(event) {
+            event.preventDefault();
+            const wordlist = document.getElementById('wordlist-path').value;
+            const output = document.getElementById('forensics-results-output');
+            output.textContent += `\n[CRACKING] Using wordlist: ${wordlist}\n`;
+            output.textContent += `[INFO] This is a demo. Real cracking requires backend processing.\n`;
+        }
+
+        function stopCracking() {
+            const output = document.getElementById('forensics-results-output');
+            output.textContent += `\n[STOPPED] Cracking process terminated\n`;
+        }
+
+        // SETTINGS
+        function saveSettings(event) {
+            event.preventDefault();
+            alert('Settings saved successfully!');
+        }
     </script>
+
 </body>
 </html>

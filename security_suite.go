@@ -46,7 +46,7 @@ func NewSecuritySuite(config SuiteConfig) *SecuritySuite {
 	orchestrator := NewResponseOrchestrator("quarantine_zone")
 
 	// Initialize IDS
-	ids := NewIntrusionDetector(ruleManager)
+	ids := NewIntrusionDetector(ruleManager, orchestrator)
 
 	// Initialize NetworkMalwareScanner (TrafficDetector)
 	trafficDetector := NewNetworkMalwareScanner("eth0", md, analyzer, orchestrator)

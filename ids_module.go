@@ -173,6 +173,8 @@ type IntrusionDetector struct {
 	Interface       string
 	Monitoring      bool
 	RuleManager     *RuleManager
+	Orchestrator    *ResponseOrchestrator
+	AlertChan       chan ThreatIndicator
 	LastLogPosition int64
 	suricataPID     int
 	mu              sync.RWMutex
@@ -180,11 +182,13 @@ type IntrusionDetector struct {
 }
 
 // NewIntrusionDetector initializes the IDS module
-func NewIntrusionDetector(rm *RuleManager) *IntrusionDetector {
+func NewIntrusionDetector(rm *RuleManager, orchestrator *ResponseOrchestrator) *IntrusionDetector {
 	ids := &IntrusionDetector{
-		Monitoring:  false,
-		RuleManager: rm,
-		stopChan:    make(chan struct{}),
+		Monitoring:   false,
+		RuleManager:  rm,
+		Orchestrator: orchestrator,
+		AlertChan:    make(chan ThreatIndicator, 100),
+		stopChan:     make(chan struct{}),
 	}
 	ids.initializeLogPosition()
 	return ids
@@ -422,6 +426,13 @@ func (id *IntrusionDetector) CheckForAlerts() []ThreatIndicator {
 		}
 		alerts = append(alerts, indicator)
 
+		// Send to alert channel
+		select {
+		case id.AlertChan <- indicator:
+		default:
+			// Channel full, drop alert
+		}
+
 		// Log the alert
 		fmt.Printf("[IDS ALERT] %s: %s -> %s (%s)\n",
 			severity, idsAlert.SourceIp, idsAlert.DestIp, idsAlert.Alert.Signature)
@@ -481,4 +492,9 @@ func (id *IntrusionDetector) GetSuricataVersion() string {
 		}
 	}
 	return "unknown"
+}
+
+// GetAlertChannel returns the channel for receiving alerts
+func (id *IntrusionDetector) GetAlertChannel() <-chan ThreatIndicator {
+	return id.AlertChan
 }
